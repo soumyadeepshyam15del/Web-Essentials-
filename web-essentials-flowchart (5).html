@@ -1,0 +1,998 @@
+<title>Web Essentials Flowchart</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: schematic graph paper; one lane per lecture on a 4-column grid, wires drawn live in one SVG layer beneath the nodes */
+:root{
+  --paper:#EDF1F5; --grid:#DCE3EA; --card:#FBFCFD; --ink:#14202B; --ink2:#4E5C6A; --line:#B9C4CF; --wire:#8F9DAB;
+  --signal:#E8572A;
+  --l1:#2F6FDB; --l2:#0E8C7E; --l3:#7A4FD0; --l4:#5E8A1E; --l5:#C0396B;
+  --display:"Familjen Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --body:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#0E151C; --grid:#18222C; --card:#152029; --ink:#E3EAF0; --ink2:#98A6B3; --line:#33424F; --wire:#566676;
+  --signal:#FF7A4A; --l1:#6EA0FF; --l2:#3CC7B5; --l3:#AC8EFF; --l4:#9CC25A; --l5:#F0739F; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0E151C; --grid:#18222C; --card:#152029; --ink:#E3EAF0; --ink2:#98A6B3; --line:#33424F; --wire:#566676;
+  --signal:#FF7A4A; --l1:#6EA0FF; --l2:#3CC7B5; --l3:#AC8EFF; --l4:#9CC25A; --l5:#F0739F; color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--paper);color:var(--ink);font:15px/1.5 var(--body);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px;}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:20px;padding-block:28px 80px}
+header.top h1{font:700 clamp(28px,4.4vw,44px)/1.05 var(--display);letter-spacing:-.01em;margin:0;text-wrap:balance}
+header.top p{margin:8px 0 0;color:var(--ink2);max-width:62ch}
+.eyebrow{font:500 11px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ink2)}
+
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;margin:22px -20px 0;padding:10px 20px;
+  background:color-mix(in srgb,var(--paper) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);
+  display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:500 12px/1 var(--mono);padding:8px 11px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.chip i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:0}
+.tour{display:flex;gap:6px;align-items:center}
+.btn{font:600 13px/1 var(--body);padding:9px 12px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.btn.primary{background:var(--signal);border-color:var(--signal);color:#fff}
+.btn:hover{border-color:var(--ink2)}
+.step{font:500 12px var(--mono);color:var(--ink2);min-width:58px;font-variant-numeric:tabular-nums}
+.prog{margin-left:auto;display:flex;align-items:center;gap:10px;font:500 12px var(--mono);color:var(--ink2)}
+.prog .track{width:110px;height:6px;border-radius:3px;background:var(--grid);overflow:hidden}
+.prog .fill{height:100%;width:0;background:var(--l2);transition:width .4s}
+.linkbtn{background:none;border:0;color:var(--ink2);font:inherit;text-decoration:underline;cursor:pointer;padding:0}
+:focus-visible{outline:2px solid var(--signal);outline-offset:3px}
+
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:16px;font-size:12.5px;color:var(--ink2);align-items:center}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.legend svg{flex:none}
+.legend svg *{fill:var(--card);stroke:var(--ink2);stroke-width:1.4}
+
+#board{position:relative;margin-top:26px}
+#wires{position:absolute;inset:0;pointer-events:none;z-index:0;overflow:visible}
+.lec{position:relative;z-index:1;padding-block:26px 34px;transition:opacity .3s}
+.lec + .lec{border-top:1px dashed var(--line)}
+.lec.dim{opacity:.28}
+.lec-head{display:flex;gap:14px;align-items:baseline;margin-bottom:26px}
+.lec-num{white-space:nowrap;font:500 13px var(--mono);color:var(--lc);letter-spacing:.08em}
+.lec-head h2{font:700 clamp(19px,2.4vw,24px)/1.15 var(--display);margin:0;text-wrap:balance}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:46px 44px;align-items:center}
+
+/* nodes: shapes follow flowchart conventions */
+.node{--edge:color-mix(in srgb,var(--lc) 50%,var(--line));position:relative;isolation:isolate;display:flex;flex-direction:column;justify-content:center;gap:2px;
+  width:100%;min-height:66px;padding:10px 16px;background:var(--card);color:var(--ink);border:1.5px solid var(--edge);border-radius:5px;
+  text-align:left;font:inherit;cursor:pointer;transition:transform .2s ease,border-color .2s,box-shadow .2s,opacity .3s;min-width:0}
+.node b{font:600 14px/1.25 var(--body);overflow-wrap:anywhere}
+.node small{font-size:12px;line-height:1.3;color:var(--ink2)}
+.node:hover,.node.active{--edge:var(--lc);transform:translateY(-2px);box-shadow:0 8px 20px -10px color-mix(in srgb,var(--lc) 70%,transparent)}
+.node.current{--edge:var(--signal);transform:translateY(-2px) scale(1.03);box-shadow:0 0 0 4px color-mix(in srgb,var(--signal) 22%,transparent)}
+.node.near{--edge:var(--lc)}
+.k-term{border-radius:999px;align-items:center;text-align:center;padding-inline:24px}
+.k-group{padding-inline:24px}
+.k-group::before,.k-group::after{content:"";position:absolute;top:0;bottom:0;width:1.5px;background:var(--edge)}
+.k-group::before{left:8px}.k-group::after{right:8px}
+.k-cmd{background:color-mix(in srgb,var(--lc) 7%,var(--card))}
+.k-cmd b{font:500 13.5px/1.3 var(--mono)}
+.k-cmd b::before{content:"$ ";color:var(--lc)}
+.k-io,.k-dec{background:transparent;border:0}
+.k-io::before,.k-io::after,.k-dec::before,.k-dec::after{content:"";position:absolute;z-index:-1}
+.k-io::before{inset:0;background:var(--edge);clip-path:polygon(16px 0,100% 0,calc(100% - 16px) 100%,0 100%)}
+.k-io::after{inset:1.5px 2px;background:var(--card);clip-path:polygon(15px 0,100% 0,calc(100% - 15px) 100%,0 100%)}
+.k-io{padding-inline:30px}
+.k-dec{min-height:112px;align-items:center;text-align:center;padding:20px 22%}
+.k-dec::before{inset:0;background:var(--edge);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.k-dec::after{inset:2.5px 4px;background:var(--card);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.k-dec b{font-size:13px}.k-dec small{font-size:11px}
+.ok{position:absolute;top:-9px;right:-4px;width:20px;height:20px;border-radius:50%;background:var(--lc);color:var(--card);display:grid;place-items:center;font:700 11px var(--body);z-index:2}
+.ok[hidden]{display:none!important}
+
+/* wires */
+.wire{fill:none;stroke:var(--wire);stroke-width:1.6;stroke-dasharray:5 5;animation:flow 1.1s linear infinite}
+.wire.rel{stroke-dasharray:2 6;opacity:.5;animation:none}
+.wire.dim{opacity:.12}
+.wire.hot{stroke:var(--ink);stroke-width:2;opacity:1}
+.wire.live{stroke:var(--signal);stroke-width:2.6;opacity:1;stroke-dasharray:none}
+@keyframes flow{to{stroke-dashoffset:-20}}
+.ah{fill:var(--wire)}.ah-hot{fill:var(--ink)}.ah-live{fill:var(--signal)}
+.wlabel{font:500 10.5px var(--mono);fill:var(--ink2);paint-order:stroke;stroke:var(--paper);stroke-width:4px;stroke-linejoin:round}
+#pulse{fill:var(--signal);filter:drop-shadow(0 0 6px var(--signal))}
+
+/* flashcard */
+.fc{position:fixed;z-index:30;width:min(390px,calc(100vw - 32px));perspective:1100px}
+.fc.in{animation:pop .22s ease-out}
+@keyframes pop{from{opacity:0;transform:translateY(6px) scale(.97)}}
+.fc-inner{display:grid;transition:transform .55s cubic-bezier(.3,.7,.3,1);transform-style:preserve-3d}
+.fc.flipped .fc-inner{transform:rotateY(180deg)}
+.face{grid-area:1/1;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:var(--card);border:1.5px solid var(--lc);border-radius:10px;
+  padding:16px 18px;box-shadow:0 18px 40px -18px rgba(10,20,30,.45);display:flex;flex-direction:column;gap:10px}
+.back{transform:rotateY(180deg)}
+.face .eyebrow{color:var(--lc);display:flex;justify-content:space-between}
+.q{font:700 19px/1.25 var(--display);margin:0;text-wrap:balance}
+.hint{font-size:12px;color:var(--ink2);margin-top:auto}
+.arm{height:3px;border-radius:2px;background:var(--grid);overflow:hidden}
+.arm i{display:block;height:100%;width:0;background:var(--lc)}
+.fc.arming .arm i{animation:arm 1.3s linear forwards}
+@keyframes arm{to{width:100%}}
+.back h3{font:700 16px/1.2 var(--display);margin:0}
+.back p{margin:0;font-size:13.5px}
+.back ul{margin:0;padding-left:18px;font-size:13px;display:grid;gap:4px;color:var(--ink)}
+.back li::marker{color:var(--lc)}
+code{font:500 12.5px var(--mono);background:color-mix(in srgb,var(--lc) 12%,transparent);padding:1px 4px;border-radius:3px}
+.acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.acts .btn{font-size:12px;padding:7px 10px}
+.acts .got[aria-pressed="true"]{background:var(--lc);border-color:var(--lc);color:var(--card)}
+
+@media (max-width:760px){
+  .grid{grid-template-columns:minmax(0,1fr);gap:24px;padding-right:44px}
+  .grid .node{grid-column:auto!important;grid-row:auto!important}
+  .prog{margin-left:0}
+  .bar{gap:8px 12px}
+}
+@media (prefers-reduced-motion:reduce){
+  .wire{animation:none}.fc-inner{transition:none}.fc.in{animation:none}.node{transition:none}
+}
+/* ---- additions: terminal, XP, quiz, diagrams, effects */
+:root{--good:#1E9A55;--bad:#D23C3C;--tbg:#0F1820;--tfg:#D5E1EB;--tdim:#7F93A5;--tok:#7BD88F}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--good:#4ADE80;--bad:#FF6B6B;--tbg:#081016}}
+:root[data-theme="dark"]{--good:#4ADE80;--bad:#FF6B6B;--tbg:#081016}
+header.top{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,380px);gap:24px;align-items:end}
+@media (max-width:880px){header.top{grid-template-columns:minmax(0,1fr)}}
+.figtag{font:600 9px/1 var(--mono);letter-spacing:.1em;color:var(--signal);border:1px solid var(--signal);border-radius:3px;padding:2px 4px}
+.term{background:var(--tbg);color:var(--tfg);border-radius:10px;overflow:hidden;box-shadow:0 18px 40px -22px rgba(0,0,0,.6);min-width:0}
+.term-bar{display:flex;gap:6px;align-items:center;padding:8px 12px;background:color-mix(in srgb,var(--tbg) 80%,#fff 8%);font:500 11px var(--mono);color:var(--tdim)}
+.term-bar i{width:9px;height:9px;border-radius:50%;background:#FF5F57}.term-bar i:nth-child(2){background:#FEBC2E}.term-bar i:nth-child(3){background:#28C840}
+.term-bar span{margin-left:8px}
+#termOut{margin:0;padding:12px 14px;height:152px;overflow:hidden;white-space:pre-wrap;font:12.5px/1.6 var(--mono);color:var(--tfg)}
+#termOut .p{color:var(--tok)}#termOut .o{color:var(--tdim)}
+#termOut .cur{display:inline-block;width:7px;height:14px;background:var(--tfg);vertical-align:-2px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.quizbtn{border-color:var(--ink);font-weight:700}
+.quizbtn[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.xp{display:flex;align-items:center;gap:8px;font:500 12px var(--mono);color:var(--ink2)}
+.xp b{font:700 12px var(--mono);color:var(--paper);background:var(--signal);padding:4px 7px;border-radius:4px}
+.xp #lvName{color:var(--ink);font-weight:600}
+.xbar{width:70px;height:6px;border-radius:3px;background:var(--grid);overflow:hidden}
+.xbar i{display:block;height:100%;width:0;background:var(--signal);transition:width .5s}
+.fig{position:absolute;bottom:4px;right:9px;font:600 8.5px/1 var(--mono);letter-spacing:.1em;color:var(--signal);opacity:.8}
+.k-group .fig{right:14px}
+.node:hover{transform:perspective(700px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) translateY(-3px)}
+.node.blip{animation:blip .6s ease-out both}
+@keyframes blip{40%{transform:scale(1.06);--edge:var(--signal)}}
+.node.right{--edge:var(--good);animation:yay .7s ease-out}
+.node.wrong{--edge:var(--bad);animation:shake .45s}
+.node.reveal{--edge:var(--signal);animation:yay .8s ease-in-out 2}
+@keyframes yay{40%{transform:scale(1.1)}}
+@keyframes shake{20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
+body.quizzing .wrap{padding-bottom:230px}
+body.quizzing .ok{display:none}
+.qp{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:35;width:min(660px,calc(100vw - 24px));
+  background:var(--card);border:1.5px solid var(--ink);border-radius:12px;box-shadow:0 20px 50px -20px rgba(0,0,0,.5);padding:14px 16px;display:grid;gap:10px}
+.qp-top{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font:500 12px var(--mono);color:var(--ink2)}
+.qp-top .sp{margin-left:auto;display:flex;gap:6px}
+#qHearts{color:var(--bad);letter-spacing:2px;font-size:15px}
+#qStreak b{color:var(--signal)}
+#qClue{margin:0;font:600 16px/1.4 var(--body);text-wrap:pretty}
+#qClue .rd{background:var(--ink);color:var(--ink);border-radius:3px;padding:0 3px}
+.qtime{height:5px;border-radius:3px;background:var(--grid);overflow:hidden}
+.qtime i{display:block;height:100%;width:100%;background:var(--signal)}
+.qover h3{margin:0;font:700 22px var(--display)}
+.qover p{margin:4px 0 10px;color:var(--ink2)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 14px);z-index:50;background:var(--ink);color:var(--paper);
+  font:600 14px var(--body);padding:10px 16px;border-radius:999px;box-shadow:0 12px 30px -10px rgba(0,0,0,.5);animation:pop .3s ease-out}
+.floatxp{position:fixed;z-index:50;font:700 15px var(--mono);color:var(--signal);pointer-events:none;animation:floatup 1.1s ease-out forwards;
+  paint-order:stroke;-webkit-text-stroke:3px var(--paper)}
+@keyframes floatup{to{transform:translateY(-46px);opacity:0}}
+.qx{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:14px;align-items:start;max-height:min(58vh,520px);overflow:auto}
+.qx-text{display:grid;gap:8px;min-width:0}
+.qx-head{margin:0;font:700 17px var(--display)}
+.qx-row{border-left:3px solid var(--line);padding:4px 0 4px 10px;display:grid;gap:2px}
+.qx-row.bad{border-color:var(--bad)}.qx-row.good{border-color:var(--good)}
+.qx-row b{font:700 15px var(--display)}.qx-row p{margin:0;font-size:13.5px}
+.qx-row ul{margin:2px 0 0;padding-left:18px;font-size:13px;display:grid;gap:2px}
+.qx-tag{font:600 10.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink2)}
+.qx-row.bad .qx-tag{color:var(--bad)}.qx-row.good .qx-tag{color:var(--good)}
+.qx-why{margin:4px 0 0!important;color:var(--ink2);font-size:13px}
+.qx-dg:empty{display:none}
+.qreview{margin:0 0 12px;padding-left:20px;display:grid;gap:6px;max-height:40vh;overflow:auto}
+.qr{all:unset;cursor:pointer;display:block;font-size:13px;line-height:1.4;padding:6px 8px;border-radius:6px;border:1px solid var(--line);background:var(--paper)}
+.qr:hover,.qr:focus-visible{border-color:var(--ink2)}
+.qr b{font:700 14px var(--display)}.qr-p{font:500 11px var(--mono);color:var(--bad)}
+@media (max-width:640px){.qx{grid-template-columns:minmax(0,1fr)}.qx-dg{max-width:320px}}
+.mcq{position:fixed;inset:0;z-index:40;background:color-mix(in srgb,var(--ink) 45%,transparent);display:grid;place-items:center;padding:16px;padding-top:calc(16px + env(safe-area-inset-top,0px));padding-bottom:calc(16px + env(safe-area-inset-bottom,0px));overflow:auto}
+.mcq-card{width:min(760px,100%);background:var(--card);border-radius:14px;border:1.5px solid var(--lc,var(--ink));box-shadow:0 30px 70px -30px rgba(0,0,0,.6);padding:18px 20px 20px;display:grid;gap:12px;max-height:calc(100vh - 32px);overflow:auto;animation:pop .25s ease-out}
+.mcq-top{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center}
+.mcq-top .eyebrow{color:var(--lc,var(--ink2))}
+.mq-meta{font:500 12px var(--mono);color:var(--ink2);font-variant-numeric:tabular-nums}
+.mcq-top .btn{margin-left:auto}
+.mcq-bar{height:5px;border-radius:3px;background:var(--grid);overflow:hidden}
+.mcq-bar i{display:block;height:100%;width:0;background:var(--lc,var(--signal));transition:width .4s}
+.mq-l{margin:0;font:600 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--lc,var(--ink2))}
+.mq-q{margin:2px 0 4px;font:700 clamp(19px,2.6vw,24px)/1.25 var(--display);text-wrap:balance}
+.mq-sub{margin:0 0 6px;color:var(--ink2)}
+.opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (max-width:600px){.opts{grid-template-columns:minmax(0,1fr)}}
+.opt{all:unset;box-sizing:border-box;cursor:pointer;display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:9px;border:1.5px solid var(--line);background:var(--paper);font-size:14.5px;line-height:1.35;transition:border-color .15s,transform .15s,background .2s}
+.opt:hover:not(:disabled){border-color:var(--lc);transform:translateY(-2px)}
+.opt:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
+.opt .key{flex:none;width:26px;height:26px;border-radius:6px;display:grid;place-items:center;font:600 12px var(--mono);background:var(--card);border:1px solid var(--line)}
+.opt:disabled{cursor:default}
+.opt.good{border-color:var(--good);background:color-mix(in srgb,var(--good) 14%,var(--card))}
+.opt.good .key{background:var(--good);color:var(--card);border-color:var(--good)}
+.opt.bad{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,var(--card));animation:shake .4s}
+.opt.bad .key{background:var(--bad);color:var(--card);border-color:var(--bad)}
+.fb{display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:16px;align-items:start;border-left:3px solid var(--good);padding:6px 0 4px 14px;margin-top:4px;animation:pop .25s ease-out}
+.fb.ok{grid-template-columns:minmax(0,1fr)}
+.fb.no{border-color:var(--bad)}
+@media (max-width:640px){.fb{grid-template-columns:minmax(0,1fr)}}
+.fb-text{display:grid;gap:6px;min-width:0}
+.fb p{margin:0;font-size:14px}
+.fb-h{font:700 18px var(--display)!important}
+.fb.ok .fb-h{color:var(--good)}.fb.no .fb-h{color:var(--bad)}
+.fb-k{font:600 10.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--ink2);margin-right:6px}
+.fb-k.bad{color:var(--bad)}.fb-k.good{color:var(--good)}
+.fb-e{color:var(--ink2)}
+.rev{margin:0;padding-left:20px;display:grid;gap:12px}
+.rev li{display:grid;gap:3px;font-size:13.5px}.rev p{margin:0}
+.rq{font-weight:600}
+.mq-skiprow{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
+.mq-hint{font:500 11.5px var(--mono);color:var(--ink2)}
+.rev .linkbtn{justify-self:start;text-align:left}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:45}
+#fcD:empty,#fcDF:empty{display:none}
+.dg{display:block;width:100%;height:auto;background:color-mix(in srgb,var(--lc) 5%,var(--paper));border:1px solid var(--line);border-radius:8px}
+.dg .b{fill:var(--card);stroke:color-mix(in srgb,var(--lc) 60%,var(--line));stroke-width:1.4}
+.dg .bh{fill:color-mix(in srgb,var(--lc) 22%,var(--card));stroke:var(--lc);stroke-width:2}
+.dg .bz{fill:none;stroke:var(--lc);stroke-width:1.4;stroke-dasharray:4 3}
+.dg .zone{fill:color-mix(in srgb,var(--lc) 6%,transparent);stroke:var(--line);stroke-dasharray:3 3}
+.dg .zone.k{fill:color-mix(in srgb,var(--lc) 16%,transparent)}
+.dg .t{font:600 10.5px var(--body);fill:var(--ink);text-anchor:middle;dominant-baseline:central}
+.dg .tm{font:500 9.5px var(--mono);fill:var(--ink2);text-anchor:middle;dominant-baseline:central}
+.dg .tc{font:500 10px var(--mono);fill:var(--ink);dominant-baseline:central}
+.dg .w{fill:none;stroke:var(--wire);stroke-width:1.4}
+.dg .wd{stroke-dasharray:4 4}
+.dg .mk{fill:var(--wire)}
+.dg .s{fill:var(--signal)}.dg .s2{fill:var(--lc)}
+.dg .file{fill:var(--card);stroke:var(--lc);stroke-width:1.4}
+.dg .hitbox{fill:color-mix(in srgb,var(--lc) 25%,transparent);animation:hit 1.6s ease-in-out infinite}
+.dg .nobox{fill:none}
+@keyframes hit{50%{fill:color-mix(in srgb,var(--lc) 50%,transparent)}}
+@media (prefers-reduced-motion:reduce){.node.blip,.node.right,.node.wrong,.node.reveal,#termOut .cur,.dg .hitbox{animation:none}}
+</style>
+
+<div class="wrap">
+  <header class="top"><div class="intro">
+    <div class="eyebrow">Web Essentials Basics · Lectures 1–5</div>
+    <h1>Web Essentials Flowchart</h1>
+    <p>From what a computer is, through the CPU and the operating system, down to Linux commands. Hover any box for its flashcard (it flips by itself), click to flip now, or press Play for a guided walk. Boxes marked FIG have an animated diagram on the back of their card. Ready to test yourself? Take the question quiz or the find-the-box game and level up from Powered On to Root User.</p>
+    <div class="legend" aria-label="Shape legend">
+      <span><svg width="30" height="16"><rect x="1" y="1" width="28" height="14" rx="7"/></svg>Key term</span>
+      <span><svg width="30" height="16"><rect x="1" y="1" width="28" height="14" rx="2"/></svg>Concept</span>
+      <span><svg width="30" height="16"><rect x="1" y="1" width="28" height="14" rx="2"/><line x1="5" y1="1" x2="5" y2="15"/><line x1="25" y1="1" x2="25" y2="15"/></svg>Group / list</span>
+      <span><svg width="30" height="16"><polygon points="6,1 29,1 24,15 1,15"/></svg>Input / output</span>
+      <span><svg width="30" height="18"><polygon points="15,1 29,9 15,17 1,9"/></svg>Decision</span>
+      <span><svg width="30" height="16"><rect x="1" y="1" width="28" height="14" rx="2"/><text x="5" y="12" style="font:600 9px monospace;stroke:none;fill:var(--ink2)">$_</text></svg>Command</span>
+      <span><b class="figtag">FIG</b>Has an animated diagram</span>
+    </div></div>
+    <div class="term" aria-label="Terminal with course facts"><div class="term-bar"><i></i><i></i><i></i><span>student@web-essentials:~</span></div><pre id="termOut"></pre></div>
+  </header>
+
+  <div class="bar">
+    <div class="chips" id="chips" role="group" aria-label="Filter by lecture"></div>
+    <div class="tour">
+      <button class="btn" id="prev" aria-label="Previous card">◀</button>
+      <button class="btn primary" id="play">▶ Play</button>
+      <button class="btn" id="next" aria-label="Next card">▶</button>
+      <span class="step" id="step">—</span>
+    </div>
+    <button class="btn primary" id="mcqBtn">Quiz: questions</button>
+    <button class="btn quizbtn" id="quizBtn">Game: find the box</button>
+    <div class="xp" title="Earn XP: mark cards as known (+5) and answer quiz questions (+10, more on a streak)"><b id="lvN">Lv 1</b><span id="lvName">Powered On</span><div class="xbar"><i id="xbar"></i></div><span id="xpT">0 XP</span></div>
+    <div class="prog"><div class="track"><div class="fill" id="fill"></div></div><span id="progtxt">0 known</span><button class="linkbtn" id="reset">reset</button></div>
+  </div>
+
+  <main id="board">
+    <svg id="wires" aria-hidden="true">
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+        <marker id="ah-hot" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah-hot" d="M0,0 L10,5 L0,10 z"/></marker>
+        <marker id="ah-live" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah-live" d="M0,0 L10,5 L0,10 z"/></marker>
+      </defs>
+      <g id="paths"></g><g id="labels"></g>
+      <circle id="pulse" r="6" cx="-20" cy="-20" opacity="0"/>
+    </svg>
+  </main>
+</div>
+
+<div class="fc" id="fc" hidden role="dialog" aria-live="polite">
+  <div class="fc-inner">
+    <div class="face front">
+      <div class="eyebrow"><span id="fcTagF"></span><span>Question</span></div>
+      <p class="q" id="fcQ"></p>
+      <div id="fcDF"></div>
+      <div class="hint" id="fcHint">Keep hovering to flip, or click the box.</div>
+      <div class="arm"><i></i></div>
+    </div>
+    <div class="face back">
+      <div class="eyebrow"><span id="fcTagB"></span><span>Answer</span></div>
+      <h3 id="fcT"></h3>
+      <div id="fcD"></div>
+      <div id="fcA"></div>
+      <div class="acts">
+        <button class="btn got" id="got" aria-pressed="false">✓ Got it</button>
+        <button class="btn" id="again">Review again</button>
+        <button class="btn" id="flipback">Flip back</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const LECS={1:"What is a computer and how it works",2:"Computer internals: hardware, software & instructions",3:"Introduction to Linux & operating systems",4:"Linux architecture",5:"Linux file system structure"};
+const N=[
+// ---------- Lecture 1
+{id:"l1-why",l:1,c:1,r:1,k:"term",t:"Why computers?",s:"Tools for thinking tasks",q:"Why were computers invented?",a:["Humans built tools like bicycles and hammers for physical work. Computers extend that idea to thinking tasks.","Solving mathematical equations","Tracking stars in the sky","Processing large amounts of information"]},
+{id:"l1-need",l:1,c:2,r:1,k:"group",t:"Speed · Accuracy · Repetition",s:"Why we need them",q:"What three strengths make computers useful?",a:["Three things humans struggle with at scale:","Speed: adding 1 to 1 crore takes a computer an instant","Accuracy: correct results when instructions are correct; no fatigue or distraction","Repetition: the same task again and again, like checking thousands of records"]},
+{id:"l1-enable",l:1,c:3,r:1,k:"group",t:"Compute + Memory",s:"What makes it possible",q:"Which two abilities let a computer do this?",a:["Two core abilities:","Compute: perform calculations and follow instructions (add, multiply, solve)","Memory: store data and use it later (keep numbers while counting, save results)"]},
+{id:"l1-def",l:1,c:4,r:1,k:"term",t:"Computer",s:"Input → Process → Output",q:"What is the definition of a computer?",a:["An electronic machine that takes input, processes it according to instructions, and produces output.","Not a magic box: a tool that solves problems by working with information","Made of two parts: hardware and software"]},
+{id:"l1-sw",l:1,c:3,r:2,k:"step",t:"Software",s:"Instructions you can’t touch",q:"What is software?",a:["A set of instructions that tells the computer what to do, when to do it, and how to do it.","Cannot be touched; runs inside the computer","Ultimately translated into binary (1s and 0s)","Written in programming languages; can be copied, and reinstalled if corrupted"]},
+{id:"l1-hw",l:1,c:4,r:2,k:"step",t:"Hardware",s:"Parts you can see and touch",q:"What is hardware? Give examples.",a:["The physical parts of a computer.","Keyboard, mouse, monitor, speakers, wires, chips","The CPU is the “brain” that controls the other parts","If it breaks you replace the part; you can’t duplicate it yourself"]},
+{id:"l1-in",l:1,c:4,r:3,k:"io",t:"Input",s:"Key press → signal",q:"What happens when you press a key?",a:["Input tells the computer what task to perform.","The key press creates an electrical signal","The signal is sent to the computer","The computer interprets it as a character, number or command"]},
+{id:"l1-store",l:1,c:3,r:3,k:"step",t:"Storage",s:"Saved in memory",q:"What happens in the storage step?",a:["After input arrives, the computer stores it in memory so it can use it when needed.","Photos, documents, videos, applications"]},
+{id:"l1-proc",l:1,c:2,r:3,k:"step",t:"Processing",s:"The processor does the work",q:"What does the computer do during processing?",a:["The processor follows instructions to turn data into useful results.","Performs calculations","Makes logical decisions","Executes commands"]},
+{id:"l1-out",l:1,c:1,r:3,k:"io",t:"Output",s:"The result you see or hear",q:"Give examples of output.",a:["Output is the result the computer produces.","Text or images on a screen","Sound from speakers","Videos"]},
+{id:"l1-types",l:1,c:1,r:4,k:"group",t:"Types of computers",s:"Desktop · Laptop · Mobile · Server",q:"Name the four types of computers and what sets each apart.",a:["Different forms for different purposes:","Desktop: fixed location, separate monitor, keyboard and CPU; high performance","Laptop: portable; screen, keyboard and processor in one; runs on battery","Mobile: smartphones, tablets, smartwatches","Server: provides data and services to other computers over a network (email, online video)"]},
+// ---------- Lecture 2
+{id:"l2-in",l:2,c:1,r:1,k:"io",t:"Input devices",s:"Help the computer “sense”",q:"How do input devices work, step by step? Name the types.",a:["They turn your actions into signals the computer understands.","You act (type, click, speak) → the device detects it","It converts the action to digital signals (0s and 1s) and sends them","The computer processes them → the result shows on screen","Types: text (keyboard), pointing (mouse, trackball), audio (mic, MIDI), image/video (scanner, webcam), gesture (VR controllers), composite (joystick, gamepad)"]},
+{id:"l2-cpu",l:2,c:2,r:1,k:"term",t:"CPU",s:"Central Processing Unit",q:"What is the CPU and what are its three parts?",a:["The “brain” of the computer: it controls how devices process information and perform tasks.","Control Unit","Arithmetic & Logic Unit (ALU)","Memory Unit"]},
+{id:"l2-out",l:2,c:3,r:1,k:"io",t:"Output devices",s:"Digital → human form",q:"How do output devices work?",a:["They convert digital data into visual, audio or printed form.","Receive processed signals → interpret them","Convert to text, image, sound or print → present to the user","Examples: monitor, printer, speakers, headphones, projectors, Braille devices"]},
+{id:"l2-bus",l:2,c:4,r:1,k:"group",t:"Bus system",s:"Wires that carry signals",q:"What are the buses and what does each carry?",a:["A bus is a set of wires carrying data and signals between parts.","Address bus: the location of the data","Data bus: the actual data","Control bus: signals for which operation to perform","System bus: main path linking CPU, memory and I/O (devices attach through a controller circuit)"]},
+{id:"l2-cu",l:2,c:1,r:2,k:"step",t:"Control Unit",s:"The manager",q:"What does the Control Unit do?",a:["Works like a manager: it directs the other parts but doesn’t do the work itself.","Interprets and decodes instructions fetched from memory","Controls the flow of data inside the CPU and with I/O devices","Decides the sequence of operations","Coordinates all components"]},
+{id:"l2-alu",l:2,c:2,r:2,k:"step",t:"ALU",s:"Math + comparisons",q:"What does the ALU perform?",a:["The Arithmetic Logic Unit does all mathematical and logical operations.","Arithmetic: add, subtract, multiply, divide","Logic: compare numbers, letters or symbols to decide what to do next"]},
+{id:"l2-mem",l:2,c:3,r:2,k:"group",t:"Memory unit",s:"Primary vs secondary",q:"Compare RAM, ROM and secondary memory.",a:["Stores data and instructions, moves data between CPU and RAM, manages cache.","RAM: temporary and volatile; cleared when power is off","ROM: read-only; holds the programs that start the computer","Secondary (HDD slower, SSD faster): permanent, backup memory","The CPU can’t use secondary memory directly; data is copied to RAM first"]},
+{id:"l2-cycle",l:2,c:4,r:2,k:"step",t:"Fetch → Decode → Execute → Store",s:"Billions of times a second",q:"Describe the CPU instruction cycle.",a:["A repeating four-step cycle:","Fetch: get the instruction (binary) from RAM","Decode: interpret the instruction","Execute: carry it out","Store: save the result back to memory"]},
+{id:"l2-perf",l:2,c:1,r:3,k:"group",t:"Hardware & performance",s:"CPU · RAM · Storage",q:"Which hardware factors decide performance?",a:["Even the best software runs poorly on weak hardware.","CPU: cores and threads, architecture, clock speed (GHz), heat handling","RAM: more RAM means more apps open without lag","Storage: HDD slow < SSD fast < NVMe SSD fastest"]},
+{id:"l2-sw",l:2,c:2,r:3,k:"group",t:"System vs application software",s:"Two classes of software",q:"How do system software and application software differ?",a:["Hardware alone doesn’t know what to do; software tells it.","System software runs the computer: OS, compilers, interpreters, assemblers. Manages memory, processor, files, security, errors, scheduling. Fast, small, close to hardware.","Application software does specific user tasks: MS Word, Chrome, Photoshop, games."]},
+{id:"l2-prog",l:2,c:3,r:3,k:"step",t:"Programs = instructions",s:"Like a recipe",q:"What is a program, and why must instructions be precise?",a:["A program is a set of step-by-step instructions; at the lowest level they are 0s and 1s.","A computer does not guess missing steps","It does not correct mistakes on its own","It does exactly what the instruction says","A missing symbol or wrong order can make a program fail"]},
+// ---------- Lecture 3
+{id:"l3-why",l:3,c:1,r:1,k:"term",t:"Why an OS?",s:"Someone must manage resources",q:"What problem does an operating system solve?",a:["Limited resources (CPU time, memory, storage, I/O) need constant management.","Who gives memory to your open apps?","Who manages many windows at once?","Who decides which task gets the CPU, and for how long?","Doing this by hand is impossible, so a software layer sits between programs and hardware."]},
+{id:"l3-def",l:3,c:2,r:1,k:"term",t:"Operating System",s:"Interface + resource manager",q:"Define an operating system in two ways.",a:["Two roles:","Interface: connects users and apps to hardware, hiding hardware complexity","Resource manager: allocates CPU time, memory, storage and I/O among apps running at once"]},
+{id:"l3-fn",l:3,c:3,r:1,k:"group",t:"OS functions",s:"What the OS does all day",q:"List the main functions of an OS.",a:["It works in the background:","User interface: command line or GUI","Loads and executes programs","Manages resources so one app can’t freeze the system","Multitasking; allocating and freeing memory","Security, error detection, file management"]},
+{id:"l3-layers",l:3,c:4,r:1,k:"step",t:"User → Apps → Shell → Kernel → Hardware",s:"Layers of the system",q:"What are the layers of a computer system, top to bottom?",a:["A request travels down through layers:","User: can’t touch hardware directly","System & application programs: ask the OS for services","Shell: receives and interprets user commands","Kernel: the core, closest to hardware (CPU scheduling, memory, devices)","Hardware"]},
+{id:"l3-win",l:3,c:1,r:2,k:"step",t:"Windows",s:"Proprietary · Microsoft",q:"Key facts about Windows?",a:["Grew out of MS-DOS (1981); the GUI arrived with Windows 1.0 in 1985.","Proprietary: only Microsoft can view or change the source","Pre-installed on most PCs; huge software and hardware compatibility","Drives like C: and D:; Command Prompt and PowerShell","More often targeted by malware"]},
+{id:"l3-mac",l:3,c:2,r:2,k:"step",t:"macOS",s:"Proprietary · UNIX-based",q:"Key facts about macOS?",a:["Apple’s OS; the 1984 version was the first personal computer OS with a built-in GUI.","Runs only on Apple hardware","UNIX-based: terminal commands similar to Linux","Supports Git, Node.js, Python; package manager Homebrew","Popular for development and creative work"]},
+{id:"l3-linux",l:3,c:3,r:2,k:"term",t:"Linux",s:"Open source · 1991",q:"What is Linux, and who created it?",a:["The kernel many OSes are built on, created in 1991 by Linus Torvalds at the University of Helsinki.","Open source and free: anyone can run, study, modify and redistribute it","Kernel handles CPU scheduling, memory, disks, devices, network","Utilities on top: command-line tools, libraries, dev tools","Package managers like apt (Ubuntu) and pacman (Arch)"]},
+{id:"l3-use",l:3,c:4,r:2,k:"group",t:"Where Linux runs",s:"Servers · Cloud · DevOps",q:"Where is Linux used, and why does it win on servers?",a:["Over 96% of the top one million web servers run Linux.","Web servers: handles heavy workloads and many users at once","Cloud: AWS, Google Cloud, Azure run mainly on Linux","Databases: performance and stability for large data","DevOps: Jenkins, Ansible, CI/CD pipelines","Free and easy to customise, with no restrictive licences"]},
+{id:"l3-when",l:3,c:1,r:3,k:"dec",t:"Which OS?",s:"Depends on the task",q:"When would you pick Windows, macOS or Linux?",a:["Match the OS to the job:","Windows: general use, students, gaming, business","macOS: creative professionals, development, Apple ecosystem (expensive)","Linux: developers, IT, servers, cloud (can be hard for beginners)"]},
+{id:"l3-distro",l:3,c:3,r:3,k:"group",t:"Distros",s:"Debian · Ubuntu · Mint · Fedora",q:"Name four distros and what each is known for.",a:["All share the Linux kernel; they differ in UI, package manager and target users.","Debian (1993): only free software, stability first, servers","Ubuntu: Debian-based, by Canonical; new release every 6 months, LTS every 2 years","Mint: Ubuntu-based, Windows-like desktop, media codecs included","Fedora: sponsored by Red Hat, cutting-edge software"]},
+{id:"l3-secure",l:3,c:4,r:3,k:"step",t:"Open but secure",s:"Many eyes on the code",q:"How can Linux be open source and still secure?",a:["Seeing the source doesn’t mean you can change the running code.","Binary code loaded in memory is protected from normal users","The official source is reviewed by thousands of developers","Your distro installs updates only from trusted, maintained versions","More reviewers find and fix bugs faster"]},
+// ---------- Lecture 4
+{id:"l4-arch",l:4,c:1,r:1,k:"step",t:"Layered architecture",s:"Users · Apps · Shell · Kernel · HW",q:"Describe the layers of Linux architecture.",a:["The kernel (core) is kept separate from user space (apps, libraries, services).","Users: give instructions through a GUI or CLI","Applications: use system libraries and system calls, never hardware directly","System libraries: ready-made functions that bridge apps and the kernel","Then Shell → Kernel → Hardware"]},
+{id:"l4-space",l:4,c:2,r:1,k:"group",t:"User space vs kernel space",s:"Two privilege levels",q:"What is the difference between kernel space and user space?",a:["Apps can’t be trusted with full hardware control, so Linux splits execution in two.","Kernel space (kernel mode): highest privilege, access to all machine instructions","User space (user mode): third-party apps get a limited set of instructions"]},
+{id:"l4-syscall",l:4,c:3,r:1,k:"step",t:"System call",s:"The doorway into the kernel",q:"What is a system call?",a:["The interface between user programs and the OS.","User-mode programs can’t run privileged operations directly","They ask the kernel through a system call","Used for files and directories, hardware access, and talking to other processes"]},
+{id:"l4-kernel",l:4,c:4,r:1,k:"term",t:"Kernel",s:"Heart of Linux",q:"What does the Linux kernel manage?",a:["Code that manages hardware and provides system abstraction.","Process scheduling and memory allocation","Device communication and hardware interaction","File system operations","Security, permissions and system calls"]},
+{id:"l4-term",l:4,c:1,r:2,k:"io",t:"Terminal",s:"Where you type & read",q:"What is a terminal, and how is it different from the shell?",a:["A text-based window that provides both input and output.","Terminal = the interface","Shell = the interpreter that runs inside it"]},
+{id:"l4-shell",l:4,c:2,r:2,k:"step",t:"Shell",s:"Wrapper around the kernel",q:"What is the shell, and why is it called that?",a:["A program that takes typed commands and passes them to the OS to execute.","It wraps around the kernel like a protective layer around the brain of the system, controlling how users interact with it."]},
+{id:"l4-cli",l:4,c:3,r:2,k:"dec",t:"CLI or GUI?",s:"Two forms of shell",q:"Compare CLI and GUI.",a:["Shells come in two forms:","CLI: typed commands, keyboard, harder for beginners, highly customisable, light on resources (Bash, Zsh, Command Prompt)","GUI: icons and menus, mouse or touch, easy, less customisable, uses more CPU and memory (Windows UI, macOS UI, GNOME)"]},
+{id:"l4-mono",l:4,c:4,r:2,k:"group",t:"Monolithic + modules",s:"Kernel design",q:"What kernel design does Linux use, and why?",a:["A monolithic kernel with loadable kernel modules.","Monolithic: memory, drivers, file systems and processes in one program","Services talk directly, so it’s fast, simple and easy to debug","Modules are add-ons loaded or removed without a reboot"]},
+{id:"l4-dev",l:4,c:1,r:3,k:"step",t:"Terminal for developers",s:"The control panel",q:"Why do developers rely on the terminal?",a:["It’s a direct line to the OS: command → shell → kernel.","Create and manage project files","Run programs and local dev servers","Install libraries and tools; compile and build","Read errors and logs; automate with scripts"]},
+{id:"l4-fs",l:4,c:2,r:3,k:"term",t:"File system & FHS",s:"A tree from /",q:"How is the Linux filesystem organised, and what is FHS?",a:["A single tree starting at the root `/`. In Linux, everything is a file.","FHS (Filesystem Hierarchy Standard) defines what each directory is for","`/bin` commands, `/boot` kernel, `/dev` devices, `/etc` config","`/home` users, `/tmp` temp files, `/usr` programs, `/var` logs"]},
+// ---------- Lecture 5
+{id:"l5-fs",l:5,c:1,r:1,k:"term",t:"File system",s:"A digital filing cabinet",q:"What is a file system and what does it do?",a:["It defines how data is stored, accessed and organised on a storage device.","Provides a naming system","Organises files into directories","Keeps metadata: size, timestamps, owner, permissions, location on disk","Enforces access control and tracks free disk space"]},
+{id:"l5-files",l:5,c:2,r:1,k:"step",t:"Files, directories, extensions",s:"The basic units",q:"What is the difference between a file and a directory? What is an extension?",a:["A file is the basic unit that stores information.","A directory (Microsoft calls it a folder) holds files and other directories, many levels deep","Extension: a suffix showing the type, e.g. .pdf, .mp3, .xlsx"]},
+{id:"l5-root",l:5,c:3,r:1,k:"group",t:"/ vs root vs /root",s:"Three different “roots”",q:"Distinguish /, the root user, and /root.",a:["Easy to mix up:","`/` is the root directory, the parent of every file and folder","The root user is the super-administrator with full access","`/root` is the root user’s home directory (normal users live in `/home/username`)"]},
+{id:"l5-dirs",l:5,c:4,r:1,k:"group",t:"Key directories",s:"/home · /etc · /var · /bin",q:"What lives in /home, /etc, /var and /bin?",a:["Each top-level directory has a job:","`/home/username`: your Documents, Downloads, Desktop, Pictures, Music, Videos","`/etc`: system-wide configuration files (named from “etcetera”)","`/var`: changing data such as logs `/var/log`, spool, cache, databases `/var/lib`","`/bin` essential commands; `/sbin` admin tools; `/usr/bin` user programs; `/usr/local/bin` manual installs"]},
+{id:"l5-paths",l:5,c:4,r:2,k:"step",t:"Absolute vs relative path",s:"Directions to a file",q:"What is the difference between an absolute and a relative path?",a:["A path is the set of directions to a file; each / goes one level deeper.","Absolute: starts at /, works from anywhere, e.g. `/home/damon/Music/Rock`","Relative: no leading /, starts where you are, e.g. `Music/Rock` from /home/damon","`.` is the current directory, `..` is the parent"]},
+{id:"l5-nav",l:5,c:3,r:2,k:"cmd",t:"pwd · cd · ls",s:"Find, move, look",q:"What do pwd, cd and ls do? Name the ls variants.",a:["The three navigation commands:","`pwd`: print working directory (where am I?)","`cd /etc/ssh`: change directory (directories only)","`ls` lists contents; `ls -l` details; `ls -a` hidden files; `ls -la` both","Find logs: `cd /` → `ls -l` → `cd var` → `cd log`"]},
+{id:"l5-create",l:5,c:2,r:2,k:"cmd",t:"touch · cat · echo · vim · nano",s:"Create files",q:"Name the ways to create a file, and what happens if it already exists.",a:["Five ways to make a file:","`touch app.log`: empty 0-byte file; if it exists, only the timestamp changes","`cat > file.txt`: type, then Ctrl+D; overwrites old content. `>>` appends instead","`echo \"hi\" > file.txt` writes a line; `>>` appends","`vim file`: i to insert, Esc, `:wq` to save. `nano file`: Ctrl+O save, Ctrl+X exit","A leading dot (`.secret.txt`) hides it; see it with `ls -a`"]},
+{id:"l5-mkdir",l:5,c:1,r:2,k:"cmd",t:"mkdir",s:"Create directories",q:"How do you create one, several, or nested directories?",a:["`mkdir name` creates a directory; `ls -l` shows it with a leading d.","`mkdir dir1 dir2 dir3`: several at once","`mkdir -p dir4/subdir1`: creates missing parents too","`ls -R`: list everything recursively (capital R only)"]},
+{id:"l5-cp",l:5,c:1,r:3,k:"cmd",t:"cp",s:"Copy files & folders",q:"How does cp work, and what are its key options?",a:["`cp source destination` makes a duplicate.","`cp a.txt b.txt dir/`: several files, destination last","`cp -r dir1 dir2`: directories need -r (recursive), or you get an error","`-i` asks before overwriting","`-f` forces overwrite without asking"]},
+{id:"l5-mv",l:5,c:2,r:3,k:"cmd",t:"mv",s:"Move & rename",q:"How do you move and rename with mv? What do -i, -f and -n do?",a:["`mv source destination` moves without leaving a copy.","Rename = move within the same directory: `mv debug.log system.log`","Works for directories too, with all their contents","`-i` ask first, `-f` force overwrite, `-n` never overwrite (no-clobber)"]},
+{id:"l5-rm",l:5,c:3,r:3,k:"cmd",t:"rm · shred",s:"Delete files",q:"How do rm and shred differ?",a:["Both delete files; shred is the secure option.","`rm file.txt` or `rm a.log b.log c.log` removes the file’s reference","`shred -u text.txt` overwrites the contents several times, then deletes","Use shred for sensitive data; recovery becomes much harder"]},
+{id:"l5-empty",l:5,c:4,r:3,k:"dec",t:"Directory empty?",s:"Pick the right delete",q:"How do you choose between rmdir and rm -r?",a:["It depends on whether the directory has anything inside.","Empty → `rmdir`","Has files or subfolders → `rm -r`"]},
+{id:"l5-naming",l:5,c:1,r:4,k:"group",t:"Naming rules",s:"Safe file names",q:"What are the rules for naming files in Linux?",a:["Follow these and commands stay painless:","Case-sensitive: File.txt, file.txt and FILE.txt are three files","Use letters, numbers, . _ - ; use _ or - instead of spaces","Never / (path separator) or the null character","Avoid shell symbols like `>` `|` `&`","Up to 255 characters; names must be unique within a directory"]},
+{id:"l5-wild",l:5,c:2,r:4,k:"cmd",t:"Wildcards * and ?",s:"Match many names",q:"What do the * and ? wildcards match?",a:["The shell expands wildcards (globbing) before the command runs.","`*` matches zero or more characters: `*log*` → debug.log, error.log","`?` matches exactly one character: `dir?` → dir1, dir2, dir3"]},
+{id:"l5-rmdir",l:5,c:3,r:4,k:"cmd",t:"rmdir",s:"Empty directories only",q:"What does rmdir do, and what are -v and -p?",a:["Removes a directory only if it’s empty; otherwise Linux shows an error.","`rmdir -v dir1` prints a message for each removal","`rmdir -p A/B` removes B, then its parent A, if both are empty"]},
+{id:"l5-rmr",l:5,c:4,r:4,k:"cmd",t:"rm -r",s:"Directory + everything inside",q:"What does rm -r remove, and what’s the risk?",a:["Recursively removes the directory, every file in it and every subdirectory.","`rm -r DirectoryY/`","Permanent, with no trash bin, so use it with extreme caution"]},
+];
+const E=[
+["l1-why","l1-need"],["l1-need","l1-enable"],["l1-enable","l1-def"],["l1-def","l1-hw"],["l1-def","l1-sw"],["l1-hw","l1-in"],["l1-in","l1-store"],["l1-store","l1-proc"],["l1-proc","l1-out"],["l1-sw","l1-proc","instructs"],["l1-def","l1-types",null,1],
+["l1-hw","l2-cpu","deep dive",1],["l1-sw","l2-sw","deep dive",1],
+["l2-in","l2-cpu"],["l2-cpu","l2-out"],["l2-cpu","l2-bus","linked by"],["l2-cpu","l2-cu"],["l2-cpu","l2-alu"],["l2-cpu","l2-mem"],["l2-mem","l2-cycle"],["l2-mem","l2-perf"],["l2-sw","l2-prog"],
+["l2-sw","l3-why","system software",1],
+["l3-why","l3-def"],["l3-def","l3-fn"],["l3-fn","l3-layers"],["l3-def","l3-win"],["l3-def","l3-mac"],["l3-def","l3-linux"],["l3-linux","l3-use"],["l3-linux","l3-distro"],["l3-linux","l3-secure"],["l3-win","l3-when"],["l3-mac","l3-when"],
+["l3-layers","l4-arch","zoom in",1],
+["l4-arch","l4-space"],["l4-space","l4-syscall"],["l4-syscall","l4-kernel"],["l4-kernel","l4-mono"],["l4-term","l4-shell"],["l4-shell","l4-cli"],["l4-shell","l4-kernel","passes to"],["l4-term","l4-dev"],["l4-shell","l4-fs"],
+["l4-fs","l5-fs","zoom in",1],
+["l5-fs","l5-files"],["l5-files","l5-root"],["l5-root","l5-dirs"],["l5-dirs","l5-paths"],["l5-paths","l5-nav"],["l5-nav","l5-create"],["l5-create","l5-mkdir"],["l5-mkdir","l5-cp"],["l5-cp","l5-mv"],["l5-mv","l5-rm"],["l5-rm","l5-empty"],["l5-empty","l5-rmdir","yes"],["l5-empty","l5-rmr","no"],["l5-naming","l5-wild"],["l5-files","l5-naming",null,1]
+].map(([f,t,label,rel])=>({f,t,label,rel:!!rel}));
+
+const $=s=>document.querySelector(s);
+const byId=Object.fromEntries(N.map((n,i)=>[n.id,Object.assign(n,{i})]));
+const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+const board=$("#board"), svg=$("#wires"), gP=$("#paths"), gL=$("#labels"), pulse=$("#pulse");
+const fc=$("#fc");
+const els={};
+let cur=null,pinned=false,flipT,hideT;
+let known=new Set();
+try{known=new Set(JSON.parse(localStorage.getItem("we-known")||"[]"))}catch(e){}
+const saveKnown=()=>{try{localStorage.setItem("we-known",JSON.stringify([...known]))}catch(e){}};
+const esc=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmt=s=>esc(s).replace(/`([^`]+)`/g,"<code>$1</code>");
+
+// ---- build sections
+for(const l of [1,2,3,4,5]){
+  const sec=document.createElement("section");
+  sec.className="lec";sec.dataset.l=l;sec.id="lecture-"+l;sec.style.setProperty("--lc",`var(--l${l})`);
+  sec.innerHTML=`<div class="lec-head"><span class="lec-num">LECTURE 0${l}</span><h2>${LECS[l]}</h2></div><div class="grid"></div>`;
+  const grid=sec.querySelector(".grid");
+  N.filter(n=>n.l===l).forEach(n=>{
+    const b=document.createElement("button");
+    b.className="node k-"+n.k;b.dataset.id=n.id;
+    b.style.gridColumn=n.c;b.style.gridRow=n.r;
+    b.innerHTML=`<b>${esc(n.t)}</b><small>${esc(n.s)}</small><span class="ok" hidden>✓</span>`;
+    b.setAttribute("aria-label",`${n.t}. Flashcard: ${n.q}`);
+    grid.appendChild(b);els[n.id]=b;
+  });
+  board.appendChild(sec);
+}
+
+// ---- chips
+let sel=0;
+const chips=$("#chips");
+[[0,"All"],[1,"L1 Computers"],[2,"L2 Internals"],[3,"L3 OS & Linux"],[4,"L4 Architecture"],[5,"L5 File system"]].forEach(([v,txt])=>{
+  const c=document.createElement("button");c.className="chip";c.dataset.v=v;
+  c.innerHTML=(v?`<i style="background:var(--l${v})"></i>`:"")+txt;
+  c.setAttribute("aria-pressed",v===0);
+  c.onclick=()=>{sel=v;chips.querySelectorAll(".chip").forEach(x=>x.setAttribute("aria-pressed",+x.dataset.v===v));
+    applyFilter();stopTour();tour.i=-1;updStep();
+    if(v)document.getElementById("lecture-"+v).scrollIntoView({behavior:reduce?"auto":"smooth",block:"start"});};
+  chips.appendChild(c);
+});
+function applyFilter(){
+  document.querySelectorAll(".lec").forEach(s=>s.classList.toggle("dim",sel&&+s.dataset.l!==sel));
+  E.forEach(e=>e.p&&e.p.classList.toggle("dim",!!sel&&(byId[e.f].l!==sel||byId[e.t].l!==sel)));
+}
+
+// ---- wires
+function box(el,b){const r=el.getBoundingClientRect();const o={l:r.left-b.left,t:r.top-b.top,r:r.right-b.left,b:r.bottom-b.top,w:r.width,h:r.height};o.cx=o.l+o.w/2;o.cy=o.t+o.h/2;return o}
+function draw(){
+  const b=board.getBoundingClientRect();
+  const W=board.scrollWidth,H=board.scrollHeight;
+  svg.setAttribute("width",W);svg.setAttribute("height",H);svg.setAttribute("viewBox",`0 0 ${W} ${H}`);
+  gP.innerHTML="";gL.innerHTML="";
+  const narrow=matchMedia("(max-width:760px)").matches;
+  E.forEach((e,k)=>{
+    const A=byId[e.f],B=byId[e.t];
+    const a=box(els[e.f],b),c=box(els[e.t],b);
+    const insA=A.k==="io"?8:0,insB=B.k==="io"?8:0;
+    let d;
+    const sameRow=a.t<c.b-4&&c.t<a.b-4;
+    if(sameRow){
+      const gap=c.l>a.r?c.l-a.r:a.l-c.r;
+      if(gap<a.w*0.8){
+        const fwd=c.l>a.r;
+        const x1=fwd?a.r-insA:a.l+insA,x2=fwd?c.l+insB:c.r-insB,m=(x1+x2)/2;
+        d=`M${x1},${a.cy} C${m},${a.cy} ${m},${c.cy} ${x2},${c.cy}`;
+      }else{
+        const h=30;d=`M${a.cx},${a.t} C${a.cx},${a.t-h} ${c.cx},${c.t-h} ${c.cx},${c.t}`;
+      }
+    }else if(narrow&&(B.i-A.i!==1||e.rel)){
+      const bx=Math.max(a.r,c.r)+18+(k%3)*7;
+      d=`M${a.r},${a.cy} C${bx},${a.cy} ${bx},${c.cy} ${c.r},${c.cy}`;
+    }else{
+      const down=c.t>a.b;
+      const y1=down?a.b:a.t,y2=down?c.t:c.b,dy=(y2-y1)/2;
+      d=`M${a.cx},${y1} C${a.cx},${y1+dy} ${c.cx},${y2-dy} ${c.cx},${y2}`;
+    }
+    const p=document.createElementNS("http://www.w3.org/2000/svg","path");
+    p.setAttribute("d",d);p.setAttribute("class","wire"+(e.rel?" rel":""));
+    p.setAttribute("marker-end","url(#ah)");p.style.setProperty("--lc",`var(--l${A.l})`);
+    gP.appendChild(p);e.p=p;
+    if(e.label){
+      const len=p.getTotalLength(),pt=p.getPointAtLength(len/2);
+      const t=document.createElementNS("http://www.w3.org/2000/svg","text");
+      t.setAttribute("x",pt.x+6);t.setAttribute("y",pt.y-4);t.setAttribute("class","wlabel");t.textContent=e.label;
+      gL.appendChild(t);e.tl=t;
+    }
+  });
+  applyFilter();
+  if(cur)edgeState(cur,true);
+}
+const edgeKey={};E.forEach(e=>edgeKey[e.f+">"+e.t]=e);
+function setEdge(e,cls){
+  if(!e.p)return;
+  e.p.classList.remove("hot","live");if(cls)e.p.classList.add(cls);
+  e.p.setAttribute("marker-end",cls==="live"?"url(#ah-live)":cls==="hot"?"url(#ah-hot)":"url(#ah)");
+}
+function edgeState(id,on){
+  E.forEach(e=>{if(e.f===id||e.t===id){
+    if(e.p&&!e.p.classList.contains("live"))setEdge(e,on?"hot":null);
+    const other=e.f===id?e.t:e.f;els[other].classList.toggle("near",on);
+  }});
+}
+let rT;const redraw=()=>{cancelAnimationFrame(rT);rT=requestAnimationFrame(()=>{draw();if(!fc.hidden&&cur)place(cur)})};
+new ResizeObserver(redraw).observe(board);
+(document.fonts?document.fonts.ready:Promise.resolve()).then(redraw);
+draw();
+
+// ---- flashcard
+function fillCard(n){
+  fc.style.setProperty("--lc",`var(--l${n.l})`);
+  $("#fcTagF").textContent=$("#fcTagB").textContent=`L${n.l} · ${n.t}`;
+  $("#fcQ").textContent=n.q;$("#fcT").textContent=n.t;
+  const [sum,...rest]=n.a;
+  $("#fcA").innerHTML=`<p>${fmt(sum)}</p>`+(rest.length?`<ul>${rest.map(x=>`<li>${fmt(x)}</li>`).join("")}</ul>`:"");
+  $("#got").setAttribute("aria-pressed",known.has(n.id));
+  $("#fcD").innerHTML="";$("#fcDF").innerHTML=DG[n.id]?DG[n.id]():"";
+  if(reduce)$("#fcDF svg")?.pauseAnimations?.();
+}
+function place(id){
+  const r=els[id].getBoundingClientRect(),w=fc.offsetWidth,h=fc.offsetHeight,vw=innerWidth,vh=innerHeight;
+  const barB=document.querySelector(".bar").getBoundingClientRect().bottom;
+  let top=r.bottom+12;
+  if(top+h>vh-8){top=r.top-h-12;if(top<barB+8)top=Math.max(barB+8,Math.min(vh-h-8,r.bottom+12));}
+  let left=Math.min(Math.max(r.left+r.width/2-w/2,12),vw-w-12);
+  fc.style.top=top+"px";fc.style.left=left+"px";
+}
+function openCard(id,opts={}){
+  clearTimeout(hideT);clearTimeout(flipT);
+  if(cur&&cur!==id){els[cur].classList.remove("active");edgeState(cur,false);}
+  const fresh=cur!==id||fc.hidden;
+  cur=id;pinned=!!opts.pinned;
+  fillCard(byId[id]);
+  fc.classList.toggle("flipped",!!opts.flipped);fc.classList.remove("arming");
+  fc.hidden=false;
+  if(fresh){fc.classList.remove("in");void fc.offsetWidth;fc.classList.add("in");}
+  els[id].classList.add("active");edgeState(id,true);
+  $("#fcHint").textContent=opts.hint||"Keep hovering to flip, or click the box.";
+  place(id);
+}
+function closeCard(){
+  clearTimeout(flipT);clearTimeout(hideT);
+  if(cur){els[cur].classList.remove("active");edgeState(cur,false);}
+  fc.hidden=true;fc.classList.remove("flipped","arming");cur=null;pinned=false;
+}
+function flip(force){
+  clearTimeout(flipT);fc.classList.remove("arming");
+  fc.classList.toggle("flipped",force===undefined?!fc.classList.contains("flipped"):force);
+}
+function arm(){
+  clearTimeout(flipT);fc.classList.remove("arming");void fc.offsetWidth;fc.classList.add("arming");
+  flipT=setTimeout(()=>flip(true),1300);
+}
+
+Object.entries(els).forEach(([id,el])=>{
+  el.addEventListener("pointerenter",ev=>{
+    if(ev.pointerType!=="mouse"||tour.on||quiz.on)return;
+    clearTimeout(hideT);
+    if(pinned&&cur!==id)return;
+    if(cur===id&&!fc.hidden)return;
+    openCard(id);arm();
+  });
+  el.addEventListener("pointerleave",ev=>{
+    if(ev.pointerType!=="mouse"||tour.on)return;
+    if(cur===id&&!pinned){clearTimeout(flipT);fc.classList.remove("arming");hideT=setTimeout(closeCard,240);}
+  });
+  el.addEventListener("click",()=>{
+    if(quiz.on){quizPick(id);return;}
+    if(tour.on)stopTour();
+    if(cur===id&&!fc.hidden){pinned=true;flip();}
+    else openCard(id,{pinned:true,hint:"Tap the box again to flip."});
+    tour.i=sel?listT().findIndex(n=>n.id===id):byId[id].i;updStep();
+  });
+  el.addEventListener("focus",()=>{if(el.matches(":focus-visible")&&cur!==id&&!tour.on&&!quiz.on)openCard(id,{hint:"Press Enter to flip."});});
+  el.addEventListener("blur",()=>{if(cur===id&&!pinned&&!tour.on)hideT=setTimeout(closeCard,150);});
+});
+fc.addEventListener("pointerenter",()=>clearTimeout(hideT));
+fc.addEventListener("pointerleave",ev=>{if(ev.pointerType==="mouse"&&!pinned&&!tour.on)hideT=setTimeout(closeCard,240);});
+document.addEventListener("click",ev=>{if(!fc.hidden&&!ev.target.closest(".node,.fc,.bar"))closeCard();});
+document.addEventListener("keydown",ev=>{
+  if(ev.key==="Escape"){stopTour();closeCard();}
+  else if(ev.key===" "&&!ev.target.closest("button")&&tour.i>=0){ev.preventDefault();toggleTour();}
+});
+let sT;addEventListener("scroll",()=>{if(!fc.hidden&&cur){cancelAnimationFrame(sT);sT=requestAnimationFrame(()=>place(cur));}},{passive:true});
+$("#flipback").onclick=()=>flip(false);
+$("#got").onclick=()=>{if(!cur)return;known.add(cur);saveKnown();renderKnown();$("#got").setAttribute("aria-pressed","true");};
+$("#again").onclick=()=>{if(!cur)return;known.delete(cur);saveKnown();renderKnown();$("#got").setAttribute("aria-pressed","false");flip(false);};
+$("#reset").onclick=()=>{known.clear();saveKnown();renderKnown();if(cur)$("#got").setAttribute("aria-pressed","false");};
+function renderKnown(){
+  N.forEach(n=>els[n.id].querySelector(".ok").hidden=!known.has(n.id));
+  $("#progtxt").textContent=`${known.size} / ${N.length} known`;
+  $("#fill").style.width=(known.size/N.length*100)+"%";
+}
+renderKnown();
+
+// ---- guided tour
+const tour={on:false,i:-1,gen:0};
+const listT=()=>N.filter(n=>!sel||n.l===sel);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function updStep(){const L=listT();$("#step").textContent=tour.i>=0?`${tour.i+1} / ${L.length}`:`0 / ${L.length}`;$("#play").textContent=tour.on?"❚❚ Pause":"▶ Play";}
+function travel(e,dur){
+  return new Promise(res=>{
+    const p=e.p;if(!p||reduce){res();return;}
+    setEdge(e,"live");
+    const len=p.getTotalLength(),t0=performance.now();pulse.setAttribute("opacity",1);
+    const tick=now=>{
+      const t=Math.min(1,(now-t0)/dur),k=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+      const pt=p.getPointAtLength(len*k);pulse.setAttribute("cx",pt.x);pulse.setAttribute("cy",pt.y);
+      if(t<1)requestAnimationFrame(tick);else{pulse.setAttribute("opacity",0);res();}
+    };requestAnimationFrame(tick);
+  });
+}
+async function goTo(i){
+  const L=listT();if(i<0||i>=L.length){stopTour();return;}
+  const g=++tour.gen;tour.i=i;updStep();
+  const n=L[i],prev=L[i-1];
+  document.querySelectorAll(".node.current").forEach(x=>x.classList.remove("current"));
+  E.forEach(e=>e.p&&e.p.classList.contains("live")&&setEdge(e,null));
+  closeCard();
+  els[n.id].scrollIntoView({behavior:reduce?"auto":"smooth",block:"center"});
+  await sleep(reduce?50:480);if(g!==tour.gen)return;
+  const e=prev&&(edgeKey[prev.id+">"+n.id]||edgeKey[n.id+">"+prev.id]);
+  if(e)await travel(e,750);if(g!==tour.gen)return;
+  els[n.id].classList.add("current");
+  openCard(n.id,{pinned:true,hint:"Flipping in a moment…"});
+  if(tour.on){fc.classList.add("arming");}
+  await sleep(1700);if(g!==tour.gen)return;
+  flip(true);
+  if(!tour.on)return;
+  const wait=2600+byId[n.id].a.join(" ").length*18;
+  await sleep(Math.min(wait,7000));if(g!==tour.gen||!tour.on)return;
+  if(e)setEdge(e,null);
+  if(i+1<L.length)goTo(i+1);else{stopTour();}
+}
+function stopTour(){tour.on=false;tour.gen++;pulse.setAttribute("opacity",0);document.querySelectorAll(".node.current").forEach(x=>x.classList.remove("current"));E.forEach(e=>e.p&&e.p.classList.contains("live")&&setEdge(e,null));updStep();}
+function toggleTour(){
+  if(tour.on){stopTour();return;}
+  tour.on=true;const L=listT();
+  goTo(tour.i>=L.length-1?0:tour.i+1);updStep();
+}
+$("#play").onclick=toggleTour;
+$("#next").onclick=()=>{const on=tour.on;tour.on=on;goTo(Math.min(tour.i+1,listT().length-1));};
+$("#prev").onclick=()=>{goTo(Math.max(tour.i-1,0));};
+updStep();
+</script>
+
+<div class="qp" id="qp" hidden role="region" aria-label="Quiz">
+  <div class="qp-top">
+    <span class="eyebrow">Find the box</span><span id="qHearts">♥♥♥</span><span id="qScore">Score 0</span><span id="qStreak">Streak <b>0</b></span>
+    <span class="sp"><button class="btn" id="qSkip">Skip</button><button class="btn" id="qExit">Exit</button></span>
+  </div>
+  <div id="qPlay"><p id="qClue"></p><div class="qx" id="qx" hidden></div></div>
+  <div class="qtime" id="qTime"><i id="qBar"></i></div>
+  <div class="qover" id="qOver" hidden><h3 id="qOverH"></h3><p id="qOverP"></p><ol class="qreview" id="qReview"></ol><div class="acts"><button class="btn primary" id="qAgain">Play again</button><button class="btn" id="qDone">Back to the map</button></div></div>
+</div>
+<div class="toast" id="toast" hidden></div>
+<canvas id="fx" aria-hidden="true"></canvas>
+
+<script>
+// ================= Diagrams =================
+const R=(x,y,w,h,t,hl,rx=5)=>`<rect class="${hl?"bh":"b"}" x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}"/>`+(t?`<text class="t" x="${x+w/2}" y="${y+h/2}">${t}</text>`:"");
+const T=(x,y,t,c="tm",start)=>`<text class="${c}" x="${x}" y="${y}"${start?' style="text-anchor:start"':""}>${t}</text>`;
+const P=(d,arrow=1,cls="w")=>`<path class="${cls}" d="${d}"${arrow?' marker-end="url(#dga)"':""}/>`;
+const D=(path,dur,begin=0,cls="s")=>`<circle r="4" class="${cls}"><animateMotion dur="${dur}s" begin="${begin}s" repeatCount="indefinite" path="${path}"/></circle>`;
+const SV=(inner,label)=>`<svg class="dg" viewBox="0 0 320 140" role="img" aria-label="${label}"><defs><marker id="dga" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0L10,5L0,10z" class="mk"/></marker></defs>${inner}</svg>`;
+
+const dIPO=()=>SV(T(160,24,"every computer, every time")+R(14,48,84,40,"Input")+R(118,48,84,40,"Process",1)+R(222,48,84,40,"Output")+P("M98,68 L116,68")+P("M202,68 L220,68")+T(56,104,"keyboard")+T(160,104,"CPU")+T(264,104,"screen")+D("M56,68 L264,68",2.6),"Input, process, output");
+const dIPSO=h=>()=>{const s=["Input","Storage","Processing","Output"];return SV(R(20,22,110,34,s[0],h==0)+R(190,22,110,34,s[1],h==1)+R(190,86,110,34,s[2],h==2)+R(20,86,110,34,s[3],h==3)+P("M130,39 L188,39")+P("M245,56 L245,84")+P("M190,103 L132,103")+P("M75,86 L75,58",1,"w wd")+T(160,70,"the cycle")+D("M75,39 L245,39 L245,103 L75,103 Z",4),"Input, storage, processing, output cycle")};
+const dHWSW=()=>{let pins="";for(let i=0;i<5;i++){const y=42+i*13;pins+=P(`M30,${y} L40,${y}`,0)+P(`M112,${y} L122,${y}`,0)}
+  return SV(pins+R(40,32,72,72,"CPU chip",0,4)+T(76,124,"hardware · touch it")+R(196,28,108,82,"",0,6)+T(206,44,"take a, b","tc",1)+T(206,60,"store a, b","tc",1)+T(206,76,"print a + b","tc",1)+T(206,96,"0101 1100","tm",1)+T(250,124,"software · instructions")+P("M194,68 L126,68")+T(160,58,"instructs")+D("M194,68 L126,68",1.6),"Software instructs hardware")};
+const dCPU=h=>()=>SV(R(8,57,62,28,"Input")+R(250,57,62,28,"Output")+`<rect class="bz" x="88" y="12" width="144" height="118" rx="8"/>`+T(160,25,"CPU","t")+R(100,38,120,26,"Control Unit",h=="cu")+R(100,76,56,26,"ALU",h=="alu")+R(164,76,56,26,"Memory",h=="mu")+P("M70,71 L86,71")+P("M232,71 L248,71")+P("M128,64 L128,74")+P("M192,64 L192,74")+T(160,120,"CU directs · ALU calculates")+D("M39,71 L281,71",3),"Inside the CPU");
+const dCycle=()=>SV(`<circle class="w wd" cx="160" cy="70" r="46"/>`+R(124,10,72,24,"Fetch",1)+R(216,58,76,24,"Decode")+R(124,106,72,24,"Execute")+R(28,58,76,24,"Store")+T(160,64,"repeats")+T(160,77,"billions/sec")+D("M160,24 A46,46 0 1,1 159.9,24",4),"Fetch decode execute store cycle");
+const dMem=()=>SV(`<polygon class="bh" points="136,14 184,14 200,44 120,44"/>`+T(160,30,"Cache","t")+`<polygon class="b" points="118,48 202,48 222,84 98,84"/>`+T(160,66,"RAM · volatile","t")+`<polygon class="b" points="96,88 224,88 250,128 70,128"/>`+T(160,110,"SSD / HDD · permanent","t")+P("M40,120 L40,24")+T(40,14,"faster")+T(40,131,"slower")+P("M282,24 L282,120")+T(282,14,"small")+T(282,131,"large")+D("M160,112 L160,68",1.8),"Memory hierarchy, data copied up to RAM");
+const dBus=()=>{let s=R(22,10,72,34,"CPU")+R(124,10,72,34,"Memory")+R(226,10,72,34,"I/O");
+  [[80,"address · where"],[102,"data · what"],[124,"control · which op"]].forEach(([y,l])=>{s+=P(`M10,${y} L310,${y}`,0)+T(66,y-7,l,"tm",1)});
+  [58,160,262].forEach(x=>s+=P(`M${x},44 L${x},124`,0));
+  return SV(s+D("M10,80 L310,80",2.2)+D("M310,102 L10,102",1.8)+D("M10,124 L310,124",2.8),"Address, data and control buses")};
+const dChain=(L,cap,hl)=>()=>{let s="";const w=66,g=11,x0=(320-(4*w+3*g))/2;
+  L.forEach((t,i)=>{const x=x0+i*(w+g);s+=R(x,46,w,36,t,i===hl);if(i<3)s+=P(`M${x+w},64 L${x+w+g-1},64`)});
+  return SV(s+(cap?T(160,108,cap):"")+D(`M${x0+w/2},64 L${x0+3*(w+g)+w/2},64`,3),L.join(" to "))};
+const dLayers=(L,hl)=>()=>{const n=L.length,gap=4,h=(122-(n-1)*gap)/n;let s="";
+  L.forEach((t,i)=>s+=R(30,9+i*(h+gap),200,h,t,i===hl,4));
+  return SV(s+P("M262,16 L262,128",0,"w wd")+T(270,8,"request ↓  result ↑")+D("M262,16 L262,126 L262,16",3.4),"Layers from user to hardware")};
+const dOS=()=>SV(R(30,8,70,26,"Browser")+R(125,8,70,26,"Music")+R(220,8,70,26,"Editor")+R(20,54,280,30,"Operating System",1)+R(20,104,62,26,"CPU")+R(92,104,62,26,"RAM")+R(164,104,62,26,"Disk")+R(236,104,64,26,"I/O")+
+  [65,160,255].map(x=>P(`M${x},54 L${x},36`)).join("")+[51,123,195,268].map(x=>P(`M${x},104 L${x},86`,0)).join("")+
+  D("M51,104 L51,94 L65,44 L65,36",2.4)+D("M123,104 L123,94 L160,44 L160,36",2.4,-0.8)+D("M195,104 L195,94 L255,44 L255,36",2.4,-1.6),"OS shares CPU, RAM, disk among apps");
+const dDistro=()=>SV(R(116,8,88,26,"Linux kernel",1)+R(14,58,78,26,"Debian")+R(228,58,78,26,"Fedora")+R(80,106,78,26,"Ubuntu")+R(190,106,78,26,"Mint")+P("M140,34 L60,56")+P("M180,34 L262,56")+P("M60,84 L110,104")+P("M158,119 L188,119")+T(267,96,"Red Hat")+D("M160,34 L53,71 L119,119 L229,119",3.6),"Linux family tree");
+const dSpaces=h=>()=>SV(`<rect class="zone" x="8" y="6" width="304" height="58" rx="6"/>`+T(18,18,"USER SPACE · limited","tm",1)+R(30,32,64,24,"App")+`<rect class="zone k" x="8" y="76" width="304" height="58" rx="6"/>`+T(18,124,"KERNEL SPACE · full privilege","tm",1)+R(226,88,70,26,"Kernel",1)+P("M94,44 L172,44 L172,56")+R(140,56,64,24,"syscall",h,4)+P("M172,80 L172,101 L224,101")+D("M94,44 L172,44 L172,101 L226,101",2.6),"System call crosses from user space to kernel space");
+const dMono=()=>SV(`<rect class="bz" x="10" y="12" width="214" height="116" rx="8"/>`+T(117,25,"Monolithic kernel","t")+R(22,38,92,36,"Memory")+R(120,38,92,36,"Drivers")+R(22,82,92,36,"Files")+R(120,82,92,36,"Processes")+
+  `<g><animateTransform attributeName="transform" type="translate" values="34 0;34 0;0 0;0 0;34 0" keyTimes="0;.15;.4;.75;1" dur="4s" repeatCount="indefinite"/>${R(228,56,56,28,"module",1)}</g>`+T(276,108,"load / unload")+T(276,121,"no reboot"),"Monolithic kernel with loadable module");
+const dTree=(hl=[],walk)=>()=>{const kids=["bin","etc","home","root","usr","var"];let s=R(136,6,48,24,"/",hl.includes("/"));
+  kids.forEach((k,i)=>{const cx=30+i*52;s+=P(`M160,30 L${cx},60`,0)+R(cx-23,60,46,22,"/"+k,hl.includes(k))});
+  s+=P("M134,82 L134,106",0)+R(100,106,68,22,"username",hl.includes("user"))+P("M290,82 L290,106",0)+R(268,106,44,22,"log",hl.includes("log"));
+  return SV(s+(walk?D("M160,18 L134,71 L134,117",2.6):""),"Linux directory tree from root")};
+const dPaths=()=>{const n=["/","home","damon","Music","Rock"];let s="";n.forEach((t,i)=>{const x=8+i*62;s+=R(x,52,52,26,t,i===2);if(i<4)s+=P(`M${x+52},65 L${x+61},65`)});
+  return SV(s+T(160,16,"you are here ▼")+P("M159,40 L286,40")+T(250,30,"relative: Music/Rock")+P("M8,98 L310,98")+T(160,114,"absolute: /home/damon/Music/Rock")+D("M8,98 L310,98",3)+D("M159,40 L286,40",2,0,"s2"),"Absolute versus relative path")};
+const dFile=mode=>()=>{const folder=(x,l)=>`<rect class="b" x="${x}" y="38" width="40" height="14" rx="3"/>`+R(x,46,110,78,"",0,6)+T(x+55,114,l);
+  const file=`<path class="file" d="M0,0 h20 l8,8 v28 h-28z"/>`+T(14,22,"a.txt");
+  const cap={cp:"$ cp a.txt DirB/",mv:"$ mv a.txt DirB/",rm:"$ rm a.txt",rmr:"$ rm -r DirA/"}[mode];
+  let s=T(160,16,cap,"tc")+folder(20,"DirA")+folder(190,"DirB");
+  const move=`<g><animateTransform attributeName="transform" type="translate" values="61 62;61 62;231 62;231 62" keyTimes="0;.2;.7;1" dur="3s" repeatCount="indefinite"/>${file}</g>`;
+  if(mode==="cp")s+=`<g transform="translate(61 62)">${file}</g>`+move;
+  if(mode==="mv")s+=move;
+  if(mode==="rm"||mode==="rmr")s+=`<g transform="translate(61 62)"><animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;.3;.55;.9;1" dur="3s" repeatCount="indefinite"/>${file}</g>`+T(160,133,mode==="rm"?"gone for good: no trash bin":"folder and everything inside: gone");
+  return SV(s,cap)};
+const dWild=()=>{let s=T(80,14,"$ ls *log*","tc")+T(240,14,"$ ls dir?","tc");
+  const col=(x,items)=>items.forEach(([t,hit],i)=>{const y=30+i*24;s+=`<rect class="${hit?"hitbox":"nobox"}" x="${x-50}" y="${y}" width="100" height="19" rx="3"/>`+T(x-42,y+10,t,"tc",1)+(hit?T(x+40,y+10,"✓"):"")});
+  col(80,[["debug.log",1],["error.log",1],["notes.txt",0],["catalog.md",1]]);col(240,[["dir1",1],["dir2",1],["dir10",0],["dirA",1]]);
+  return SV(s,"Wildcard matches")};
+const dDecide=()=>SV(`<polygon class="bh" points="160,8 220,42 160,76 100,42"/>`+T(160,42,"empty?","t")+P("M100,42 L60,42 L60,94")+P("M220,42 L260,42 L260,94")+T(78,34,"yes")+T(242,34,"no")+R(20,96,80,28,"rmdir")+R(220,96,80,28,"rm -r")+D("M160,42 L60,42 L60,96",2)+D("M160,42 L260,42 L260,96",2,-1),"Choose rmdir or rm -r");
+
+const DG={
+ "l1-def":dIPO,"l1-hw":dHWSW,"l1-sw":dHWSW,"l1-in":dIPSO(0),"l1-store":dIPSO(1),"l1-proc":dIPSO(2),"l1-out":dIPSO(3),
+ "l1-enable":dChain(["Input","Compute","Memory","Result"],"compute + remember"),
+ "l2-cpu":dCPU(),"l2-cu":dCPU("cu"),"l2-alu":dCPU("alu"),"l2-mem":dMem,"l2-cycle":dCycle,"l2-bus":dBus,"l2-perf":dMem,
+ "l2-in":dChain(["You act","Device","0 1 0 1","Computer"],"action → digital signal",1),"l2-out":dChain(["Computer","0 1 0 1","Device","You"],"digital signal → human form",2),
+ "l2-prog":dChain(["Browser","Type URL","Enter","Site"],"skip one step and the site never opens"),
+ "l3-why":dOS,"l3-def":dOS,"l3-fn":dOS,"l3-layers":dLayers(["User","Apps","Shell","Kernel","Hardware"],3),"l3-linux":dDistro,"l3-distro":dDistro,
+ "l4-arch":dLayers(["Users","Applications","System libraries","Shell","Kernel","Hardware"],2),"l4-space":dSpaces(0),"l4-syscall":dSpaces(1),"l4-kernel":dMono,"l4-mono":dMono,
+ "l4-term":dChain(["Terminal","Shell","Kernel","Hardware"],"terminal = interface · shell = interpreter",0),"l4-shell":dChain(["Terminal","Shell","Kernel","Hardware"],"the shell wraps the kernel",1),
+ "l4-dev":dChain(["$ cmd","Shell","Kernel","Result"],"every command takes this trip"),"l4-fs":dTree(["/"]),
+ "l5-fs":dTree(["/"]),"l5-root":dTree(["/","root"]),"l5-dirs":dTree(["home","etc","var","bin"]),"l5-paths":dPaths,"l5-nav":dTree(["home","user"],1),
+ "l5-cp":dFile("cp"),"l5-mv":dFile("mv"),"l5-rm":dFile("rm"),"l5-rmr":dFile("rmr"),"l5-wild":dWild,"l5-empty":dDecide,"l5-rmdir":dDecide,
+ "l5-mkdir":dTree(["home","user"],1),
+};
+
+// fig tags + tilt + load sweep
+Object.entries(els).forEach(([id,el])=>{
+  if(DG[id]&&byId[id].k!=="dec")el.insertAdjacentHTML("beforeend",'<span class="fig" aria-hidden="true">FIG</span>');
+  el.addEventListener("pointermove",ev=>{if(ev.pointerType!=="mouse"||reduce)return;const r=el.getBoundingClientRect();
+    el.style.setProperty("--ry",((ev.clientX-r.left)/r.width-.5)*10+"deg");el.style.setProperty("--rx",(.5-(ev.clientY-r.top)/r.height)*10+"deg");});
+  el.addEventListener("pointerleave",()=>{el.style.removeProperty("--rx");el.style.removeProperty("--ry")});
+});
+if(!reduce)N.forEach((n,i)=>{const el=els[n.id];el.style.animationDelay=(i*35)+"ms";el.classList.add("blip");el.addEventListener("animationend",()=>{el.classList.remove("blip");el.style.animationDelay=""},{once:true})});
+
+// ================= FX =================
+const fx=$("#fx"),ctx=fx.getContext("2d");let parts=[],fxOn=false;
+const cssv=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+function sizeFx(){const d=devicePixelRatio||1;fx.width=innerWidth*d;fx.height=innerHeight*d;ctx.setTransform(d,0,0,d,0,0)}
+sizeFx();addEventListener("resize",sizeFx);
+function spawn(x,y,n,spread,up){if(reduce)return;const cols=["--l1","--l2","--l3","--l4","--l5","--signal"].map(cssv);
+  for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,v=Math.random()*spread+2;parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-up,s:4+Math.random()*5,c:cols[i%cols.length],r:Math.random()*6,vr:(Math.random()-.5)*.3,l:70+Math.random()*40})}
+  if(!fxOn){fxOn=true;requestAnimationFrame(tickFx)}}
+function tickFx(){ctx.clearRect(0,0,innerWidth,innerHeight);parts=parts.filter(p=>p.l-->0);
+  parts.forEach(p=>{p.vy+=.22;p.vx*=.99;p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;ctx.save();ctx.globalAlpha=Math.min(1,p.l/30);ctx.translate(p.x,p.y);ctx.rotate(p.r);ctx.fillStyle=p.c;ctx.fillRect(-p.s/2,-p.s/3,p.s,p.s*.66);ctx.restore()});
+  if(parts.length)requestAnimationFrame(tickFx);else{fxOn=false;ctx.clearRect(0,0,innerWidth,innerHeight)}}
+const burstAt=el=>{const r=el.getBoundingClientRect();spawn(r.left+r.width/2,r.top+r.height/2,36,7,3)};
+const confetti=()=>{for(let i=0;i<6;i++)spawn(innerWidth*(i+.5)/6,-10,26,6,-2)};
+let toastT;function toast(msg){const t=$("#toast");t.textContent=msg;t.hidden=false;t.style.animation="none";void t.offsetWidth;t.style.animation="";clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,2600)}
+function floatXP(el,txt){const r=el.getBoundingClientRect(),f=document.createElement("div");f.className="floatxp";f.textContent=txt;f.style.left=(r.left+r.width/2-24)+"px";f.style.top=(r.top-8)+"px";document.body.appendChild(f);setTimeout(()=>f.remove(),1200)}
+
+// ================= XP & levels =================
+const LV=[[0,"Powered On"],[60,"BIOS Check"],[150,"Bootloader"],[280,"Kernel Cadet"],[450,"Shell Scripter"],[650,"Sysadmin"],[900,"Root User"]];
+let xp=0;try{xp=+localStorage.getItem("we-xp")||0}catch(e){}
+const lvOf=x=>{let i=0;LV.forEach(([t],k)=>{if(x>=t)i=k});return i};
+function renderXP(){const i=lvOf(xp),lo=LV[i][0],hi=LV[i+1]?LV[i+1][0]:lo;
+  $("#lvN").textContent="Lv "+(i+1);$("#lvName").textContent=LV[i][1];$("#xpT").textContent=xp+" XP";
+  $("#xbar").style.width=(hi>lo?(xp-lo)/(hi-lo)*100:100)+"%";}
+function addXP(n,el){const before=lvOf(xp);xp+=n;try{localStorage.setItem("we-xp",xp)}catch(e){}renderXP();if(el)floatXP(el,"+"+n+" XP");
+  const after=lvOf(xp);if(after>before){toast(`Level up: Lv ${after+1} · ${LV[after][1]}`);confetti();}}
+renderXP();
+
+$("#got").onclick=()=>{if(!cur)return;const id=cur,l=byId[id].l,fresh=!known.has(id);known.add(id);saveKnown();renderKnown();$("#got").setAttribute("aria-pressed","true");
+  if(fresh){addXP(5,els[id]);burstAt($("#got"));
+    if(N.filter(n=>n.l===l).every(n=>known.has(n.id))){toast(`Lecture ${l} mastered: every card known`);confetti();}}};
+$("#reset").onclick=()=>{known.clear();xp=0;try{localStorage.setItem("we-xp",0)}catch(e){}saveKnown();renderKnown();renderXP();if(cur)$("#got").setAttribute("aria-pressed","false");};
+
+// ================= Terminal =================
+const FACTS=["Over 96% of the top 1 million web servers run Linux.","Linus Torvalds wrote the Linux kernel in 1991 as a student in Helsinki.","A CPU runs fetch → decode → execute → store billions of times a second.","shred overwrites a file several times before deleting it.","macOS's 1984 ancestor was the first PC OS with a built-in GUI.","/etc got its name from “etcetera”: it held files that fit nowhere else.","RAM forgets everything when the power goes off. ROM doesn't.","Linux filenames can be up to 255 characters; old UNIX allowed 14.","File.txt, file.txt and FILE.txt are three different files in Linux.","The kernel runs in kernel mode; your apps only get user mode.","Ubuntu ships a new release every 6 months, and an LTS every 2 years.","rmdir refuses to delete a folder that still has files in it."];
+const out=$("#termOut");let tl=["$ whoami","student · Web Essentials Basics","$ ls lectures/","01-computer 02-cpu 03-linux 04-arch 05-fs"],typing="";
+function renderTerm(){out.innerHTML=tl.slice(-4).map(l=>l[0]==="$"?`<span class="p">$</span>${esc(l.slice(1))}`:`<span class="o">${esc(l)}</span>`).join("\n")+"\n"+(typing?`<span class="p">$</span>${esc(typing.slice(1))}`:'<span class="p">$</span> ')+'<span class="cur"></span>'}
+renderTerm();
+(async function termLoop(){let fi=Math.floor(Math.random()*FACTS.length),k=0;
+  while(true){await sleep(2600);
+    const cmd=k%3===2?"$ cat ~/.progress":"$ fact --random",res=k%3===2?`${known.size}/${N.length} cards known · ${xp} XP · ${LV[lvOf(xp)][1]}`:FACTS[fi++%FACTS.length];k++;
+    if(reduce){tl.push(cmd,res);renderTerm();continue}
+    for(let i=1;i<=cmd.length;i++){typing=cmd.slice(0,i);renderTerm();await sleep(45+Math.random()*40)}
+    await sleep(250);typing="";tl.push(cmd,res);renderTerm();}})();
+
+// ================= Quiz =================
+const quiz={on:false,q:null,lives:3,score:0,streak:0,bestStreak:0,pool:[],lock:false,t0:0,raf:0,dur:30000,wrongs:0};
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+function clueFor(n){let t=n.a[0];if(t.length<90&&n.a[1])t+=" "+n.a[1];
+  const terms=n.t.split(/\s*(?:·|\+|&|,|→|=|\bvs\b|\bor\b)\s*/i).map(x=>x.replace(/[?*]/g,"").trim()).filter(x=>x.length>1).sort((a,b)=>b.length-a.length);
+  let h=fmt(t);const hold=[];terms.forEach(w=>{const re=new RegExp(w.replace(/[.*+?^${}()|[\]\\\/]/g,"\\$&"),"gi");h=h.replace(re,m=>{hold.push(m.length);return "\u0001"+(hold.length-1)+"\u0002"})});
+  return h.replace(/\u0001(\d+)\u0002/g,(_,k)=>`<span class="rd">${"x".repeat(Math.min(hold[k],10))}</span>`)}
+function qHud(){$("#qHearts").textContent="♥".repeat(quiz.lives)+"♡".repeat(3-quiz.lives);$("#qScore").textContent="Score "+quiz.score;$("#qStreak").innerHTML="Streak <b>"+quiz.streak+"</b>"}
+function startQuiz(){stopTour();closeCard();Object.assign(quiz,{on:true,lives:3,score:0,streak:0,bestStreak:0,pool:[],lock:false,missed:[],answered:0});
+  document.body.classList.add("quizzing");$("#quizBtn").setAttribute("aria-pressed","true");$("#quizBtn").textContent="Quiz running";
+  $("#qp").hidden=false;$("#qOver").hidden=true;$("#qPlay").hidden=false;$("#qTime").hidden=false;$("#qSkip").hidden=false;$("#qx").hidden=true;qHud();nextQ();}
+function nextQ(){if(!quiz.on)return;if(!quiz.pool.length)quiz.pool=shuffle(listT().slice());
+  quiz.q=quiz.pool.pop();quiz.lock=false;$("#qx").hidden=true;$("#qClue").hidden=false;$("#qTime").hidden=false;$("#qSkip").hidden=false;
+  $("#qClue").innerHTML=`<span class="eyebrow" style="color:var(--l${quiz.q.l})">Lecture ${quiz.q.l} · which box is this?</span><br>`+clueFor(quiz.q);
+  quiz.t0=performance.now();cancelAnimationFrame(quiz.raf);
+  const tick=now=>{if(!quiz.on||quiz.lock)return;const f=1-(now-quiz.t0)/quiz.dur;$("#qBar").style.width=Math.max(0,f*100)+"%";if(f<=0)timeout();else quiz.raf=requestAnimationFrame(tick)};quiz.raf=requestAnimationFrame(tick);}
+function flash(el,cls,ms){el.classList.remove(cls);void el.offsetWidth;el.classList.add(cls);setTimeout(()=>el.classList.remove(cls),ms)}
+const short=(s,n=150)=>{s=s.replace(/`/g,"");return s.length>n?s.slice(0,s.lastIndexOf(" ",n))+"…":s};
+function quizPick(id){if(!quiz.on||quiz.lock||!quiz.q)return;const el=els[id];quiz.answered++;
+  if(id===quiz.q.id){quiz.lock=true;const left=1-(performance.now()-quiz.t0)/quiz.dur;const gain=10+quiz.streak*2+(left>.6?5:0);
+    quiz.streak++;quiz.bestStreak=Math.max(quiz.bestStreak,quiz.streak);quiz.score+=gain;qHud();flash(el,"right",800);burstAt(el);addXP(gain,el);
+    if(quiz.streak&&quiz.streak%5===0){toast(`${quiz.streak} in a row!`);confetti()}
+    setTimeout(nextQ,950);}
+  else{flash(el,"wrong",500);miss("wrong",id);}}
+// Explain a missed question: reveal the right box, say what the picked box is actually about, and why the answer fits
+function miss(kind,pickedId){quiz.lock=true;cancelAnimationFrame(quiz.raf);quiz.streak=0;
+  if(kind!=="skip")quiz.lives--;qHud();
+  const q=quiz.q,pk=pickedId?byId[pickedId]:null;quiz.missed.push({q,pk,kind});
+  const head={wrong:"Not quite.",time:"Time’s up.",skip:"Skipped."}[kind];
+  const pickedRow=pk?`<div class="qx-row bad"><span class="qx-tag">✗ You picked</span><b>${esc(pk.t)}</b><p>That box is about: ${fmt(short(pk.a[0],120))}</p></div>`:"";
+  const bullets=q.a.slice(1,3).map(x=>`<li>${fmt(x)}</li>`).join("");
+  $("#qx").style.setProperty("--lc",`var(--l${q.l})`);
+  $("#qx").innerHTML=`<div class="qx-text"><p class="qx-head">${head} ${kind==="skip"?"":quiz.lives>0?`${quiz.lives} ${quiz.lives===1?"life":"lives"} left.`:"No lives left."}</p>${pickedRow}
+    <div class="qx-row good"><span class="qx-tag">✓ Answer · Lecture ${q.l}</span><b>${esc(q.t)}</b><p>${fmt(q.a[0])}</p>${bullets?`<ul>${bullets}</ul>`:""}
+    ${pk?`<p class="qx-why">Why: the clue describes <b>${esc(q.t.toLowerCase())}</b> (${esc(q.s.toLowerCase())}), while ${esc(pk.t)} is about ${esc(pk.s.toLowerCase())}.</p>`:""}</div>
+    <div class="acts"><button class="btn primary" id="qNext">${quiz.lives>0?"Next question →":"See results"}</button><button class="btn" id="qCard">Open full flashcard</button></div></div>
+    <div class="qx-dg">${DG[q.id]?DG[q.id]():""}</div>`;
+  $("#qClue").hidden=true;$("#qTime").hidden=true;$("#qSkip").hidden=true;$("#qx").hidden=false;
+  const el=els[q.id];el.scrollIntoView({behavior:reduce?"auto":"smooth",block:"center"});flash(el,"reveal",1700);
+  $("#qNext").onclick=()=>quiz.lives>0?nextQ():gameOver();
+  $("#qCard").onclick=()=>{openCard(q.id,{pinned:true,flipped:true,hint:""})};
+  $("#qNext").focus({preventScroll:true});}
+function timeout(){if(quiz.lock)return;miss("time");}
+$("#qSkip").onclick=()=>{if(quiz.lock||!quiz.on)return;miss("skip");};
+function gameOver(){quiz.lock=true;cancelAnimationFrame(quiz.raf);closeCard();let best=0;try{best=+localStorage.getItem("we-best")||0}catch(e){}
+  const rec=quiz.score>best;if(rec){try{localStorage.setItem("we-best",quiz.score)}catch(e){}confetti()}
+  $("#qPlay").hidden=true;$("#qTime").hidden=true;$("#qSkip").hidden=true;$("#qOver").hidden=false;
+  $("#qOverH").textContent=rec?`New best: ${quiz.score}`:`Out of lives · ${quiz.score} points`;
+  $("#qOverP").textContent=`Best streak ${quiz.bestStreak} · personal best ${Math.max(best,quiz.score)}. Review what you missed:`;
+  $("#qReview").innerHTML=quiz.missed.map((m,i)=>`<li><button class="qr" data-i="${i}"><b>${esc(m.q.t)}</b>${m.pk?` <span class="qr-p">you picked ${esc(m.pk.t)}</span>`:m.kind==="time"?' <span class="qr-p">time ran out</span>':' <span class="qr-p">skipped</span>'}<br><span>${fmt(short(m.q.a[0]))}</span></button></li>`).join("");
+  $("#qReview").querySelectorAll(".qr").forEach(b=>b.onclick=()=>{const q=quiz.missed[+b.dataset.i].q;els[q.id].scrollIntoView({behavior:reduce?"auto":"smooth",block:"center"});flash(els[q.id],"reveal",1700);setTimeout(()=>openCard(q.id,{pinned:true,flipped:true,hint:""}),reduce?0:500)});}
+function exitQuiz(){quiz.on=false;cancelAnimationFrame(quiz.raf);$("#qp").hidden=true;document.body.classList.remove("quizzing");$("#quizBtn").setAttribute("aria-pressed","false");$("#quizBtn").textContent="Game: find the box";}
+$("#quizBtn").onclick=()=>quiz.on?exitQuiz():startQuiz();
+$("#qExit").onclick=exitQuiz;$("#qDone").onclick=exitQuiz;$("#qAgain").onclick=startQuiz;
+chips.addEventListener("click",()=>{if(quiz.on)quiz.pool=[]});
+document.addEventListener("keydown",ev=>{if(ev.key==="Escape"&&quiz.on)exitQuiz()});
+const _toggle=toggleTour;toggleTour=function(){if(quiz.on)return;_toggle()};
+$("#play").onclick=()=>toggleTour();
+</script>
+
+<div class="mcq" id="mcq" hidden role="dialog" aria-modal="true" aria-label="Multiple choice quiz">
+  <div class="mcq-card" id="mcqCard">
+    <div class="mcq-top"><span class="eyebrow" id="mqTag"></span><span class="mq-meta" id="mqProg"></span><span class="mq-meta" id="mqScore"></span><button class="btn" id="mqClose">Close</button></div>
+    <div class="mcq-bar"><i id="mqBar"></i></div>
+    <div id="mqBody"></div>
+  </div>
+</div>
+<script>
+// ================= MCQ question bank (from lectures 1–5) =================
+// o[0] is always the correct option; options are shuffled when shown.
+const QB=[
+{l:1,n:"l1-def",q:"Which is the best definition of a computer?",o:["An electronic machine that takes input, processes it by instructions, and produces output","A machine that only stores files","Any device that has a screen","A tool that thinks and decides on its own"],e:"Lecture 1 defines a computer as an electronic machine that takes input, processes it according to instructions, and produces output."},
+{l:1,n:"l1-sw",q:"Which of these is software?",o:["A web browser","A keyboard","A monitor","A CPU chip"],e:"Software is a set of instructions you can't touch. Keyboards, monitors and chips are physical hardware."},
+{l:1,n:"l1-in",q:"What is the correct order of the basic computer cycle?",o:["Input → Storage → Processing → Output","Input → Output → Processing → Storage","Processing → Input → Storage → Output","Storage → Input → Output → Processing"],e:"Data comes in (input), is kept in memory (storage), worked on by the processor (processing), then shown as a result (output)."},
+{l:1,n:"l1-in",q:"When you press a key, what happens first?",o:["The key press creates an electrical signal","The character appears on screen","The file is saved to disk","The CPU restarts"],e:"Key press → electrical signal → sent to the computer → interpreted as a character, number or command. Showing it on screen comes last (output)."},
+{l:1,n:"l1-enable",q:"Which two abilities let computers do their work?",o:["Compute and memory","Speed and colour","Screen and keyboard","Internet and battery"],e:"Compute = calculate and follow instructions. Memory = store data and use it later."},
+{l:1,n:"l1-hw",q:"If a hardware part breaks, what must you do?",o:["Replace it with a new part","Reinstall it from a backup","Make a copy of it","Recompile it"],e:"Hardware is physical, so it has to be replaced. Software can be reinstalled or copied."},
+{l:1,n:"l1-sw",q:"Software instructions are finally translated into…",o:["Binary code (1s and 0s)","Plain English","Decimal numbers","HTML"],e:"The computer only understands binary, so every instruction ends up as 1s and 0s."},
+{l:1,n:"l1-types",q:"Which type of computer provides data and services to other computers over a network?",o:["Server","Laptop","Smartwatch","Desktop"],e:"A server is a powerful computer that serves others, for example when you check email or watch videos online."},
+{l:1,n:"l1-need",q:"Which is NOT a reason we need computers?",o:["They think and make decisions on their own","Speed","Accuracy","Repeating tasks without getting tired"],e:"Computers don't think for themselves; they follow instructions. Speed, accuracy and repetition are the real reasons."},
+{l:1,n:"l1-out",q:"Text shown on a screen is an example of…",o:["Output","Input","Storage","Processing"],e:"Output is the result the computer produces: text or images on screen, sound, video."},
+{l:1,n:"l1-proc",q:"What does a computer do during processing?",o:["Performs calculations and makes logical decisions","Reads key presses","Plays sound from speakers","Saves photos permanently"],e:"During processing the processor calculates, makes logical decisions and executes commands."},
+{l:2,n:"l2-cu",q:"Which part of the CPU works like a manager and decodes instructions?",o:["Control Unit","ALU","Hard disk","Data bus"],e:"The Control Unit directs the other parts, decodes instructions and sets the order of operations, but doesn't do the calculations itself."},
+{l:2,n:"l2-alu",q:"Comparing two numbers to decide what to do next is done by the…",o:["ALU","Control Unit","ROM","Monitor"],e:"The Arithmetic Logic Unit handles both maths and logic (comparisons)."},
+{l:2,n:"l2-mem",q:"Which memory is volatile (loses data when power is off)?",o:["RAM","ROM","SSD","HDD"],e:"RAM is temporary. ROM, SSD and HDD keep their data without power."},
+{l:2,n:"l2-mem",q:"Where are the programs that start the computer stored?",o:["ROM","RAM","Cache","Control bus"],e:"ROM is read-only and keeps the start-up programs even when the power is off."},
+{l:2,n:"l2-mem",q:"Can the CPU use data on a hard disk directly?",o:["No, it is first copied into RAM","Yes, always","Only for games","Only through ROM"],e:"Secondary memory isn't directly accessible to the CPU; data is copied into RAM first."},
+{l:2,n:"l2-cycle",q:"What is the order of the CPU instruction cycle?",o:["Fetch → Decode → Execute → Store","Decode → Fetch → Store → Execute","Execute → Fetch → Decode → Store","Store → Execute → Decode → Fetch"],e:"Get the instruction from RAM, interpret it, carry it out, save the result. Repeated billions of times a second."},
+{l:2,n:"l2-bus",q:"Which bus carries the location of the data?",o:["Address bus","Data bus","Control bus","Power bus"],e:"Address bus = where. Data bus = what. Control bus = which operation."},
+{l:2,n:"l2-bus",q:"Which bus tells components what operation to perform?",o:["Control bus","Address bus","Data bus","System clock"],e:"The control bus carries control signals; the data bus carries the data itself."},
+{l:2,n:"l2-perf",q:"Which storage is fastest?",o:["NVMe SSD","HDD","Regular SSD","They are all equal"],e:"HDD is slowest, SSD is much faster, NVMe SSD is fastest."},
+{l:2,n:"l2-perf",q:"What happens with too little RAM?",o:["The system slows down even with a powerful CPU","The screen turns off","Files are deleted","The ALU stops working"],e:"RAM holds what the CPU is actively using; when it runs out, everything lags."},
+{l:2,n:"l2-in",q:"A webcam is which kind of input device?",o:["Image and video input","Pointing device","Text input","Audio output"],e:"Scanners, digital cameras and webcams capture pictures and video."},
+{l:2,n:"l2-out",q:"Which of these is an output device?",o:["Printer","Scanner","Microphone","Joystick"],e:"A printer produces a hard copy of results. The others send information into the computer."},
+{l:2,n:"l2-sw",q:"An operating system is an example of…",o:["System software","Application software","Hardware","A bus"],e:"System software runs the computer (OS, compilers, interpreters). Application software does specific user tasks."},
+{l:2,n:"l2-prog",q:"If a program skips a step, the computer will…",o:["Fail or give a wrong result; it can't guess","Fix the step automatically","Search online for the answer","Always skip it harmlessly"],e:"Computers don't guess missing steps or correct mistakes. Instructions must be precise."},
+{l:3,n:"l3-def",q:"Besides being an interface, what is the main job of an OS?",o:["Managing resources like CPU time, memory and devices","Designing websites","Replacing broken hardware","Writing programs for you"],e:"An OS is both an interface and a resource manager that shares CPU, memory, storage and I/O among apps."},
+{l:3,n:"l3-layers",q:"Which OS layer works closest to the hardware?",o:["Kernel","Shell","User","Applications"],e:"Order: User → Apps → Shell → Kernel → Hardware. The kernel sits right above the hardware."},
+{l:3,n:"l3-layers",q:"Which program receives and interprets user commands?",o:["Shell","Kernel","ROM","Compiler"],e:"The shell takes your commands and passes them to the OS in a form it understands."},
+{l:3,n:"l3-linux",q:"Who created the Linux kernel, and when?",o:["Linus Torvalds, 1991","Bill Gates, 1985","Steve Jobs, 1984","Canonical, 2004"],e:"Linus Torvalds, a student at the University of Helsinki, created it in 1991."},
+{l:3,n:"l3-win",q:"Windows grew out of which earlier system?",o:["MS-DOS","UNIX","Linux","macOS"],e:"MS-DOS (1981) was command-line; Windows 1.0 added a GUI in 1985."},
+{l:3,n:"l3-mac",q:"Which OS runs only on Apple hardware?",o:["macOS","Windows","Ubuntu","Fedora"],e:"macOS is proprietary to Apple and limited to Apple hardware."},
+{l:3,n:"l3-win",q:"What does “proprietary” mean for an OS?",o:["Only the company can view and change the source code","Anyone can modify it","It is always free","It only runs on servers"],e:"Windows and macOS are proprietary; Linux is open source."},
+{l:3,n:"l3-distro",q:"Ubuntu is based on which distro?",o:["Debian","Fedora","Mint","Arch"],e:"Ubuntu is Debian-based. Mint is in turn based on Ubuntu."},
+{l:3,n:"l3-distro",q:"Which distro is sponsored by Red Hat and known for cutting-edge software?",o:["Fedora","Debian","Mint","Ubuntu"],e:"Fedora gets the latest software first. Debian focuses on stability."},
+{l:3,n:"l3-distro",q:"Which distro was designed to feel familiar to Windows users?",o:["Linux Mint","Debian","Fedora","Red Hat"],e:"Mint's desktop is designed to feel like Windows and includes media codecs out of the box."},
+{l:3,n:"l3-use",q:"Roughly what share of the top one million web servers run Linux?",o:["More than 96%","About 50%","Less than 10%","Exactly 75%"],e:"More than 96% of the top one million web servers use Linux."},
+{l:3,n:"l3-secure",q:"Why can open-source Linux still be secure?",o:["Thousands of developers review the code, and updates come from trusted sources","Its source code is kept secret","Nobody uses it","It never gets updates"],e:"Running binary code is protected, and the official source is checked by many developers before release."},
+{l:4,n:"l4-space",q:"User applications run in…",o:["User mode, with a limited set of instructions","Kernel mode, with full privilege","BIOS mode","Safe mode"],e:"Only the kernel gets full privilege. Third-party apps can't be trusted with everything."},
+{l:4,n:"l4-syscall",q:"How does a user program ask the kernel for a privileged service?",o:["Through a system call","Through a terminal","With a wildcard","With a package manager"],e:"System calls are the interface between user programs and the kernel (files, processes, hardware)."},
+{l:4,n:"l4-mono",q:"What kind of kernel design does Linux use?",o:["Monolithic, with loadable modules","Microkernel only","No kernel at all","A GUI kernel"],e:"All core services run as one program (fast, direct), and modules add flexibility."},
+{l:4,n:"l4-mono",q:"What can loadable kernel modules do?",o:["Be added or removed without rebooting","Only be installed at the factory","Run only inside the GUI","Replace the shell"],e:"They are add-ons loaded or removed while the system runs."},
+{l:4,n:"l4-term",q:"Which statement about terminal and shell is correct?",o:["The terminal is the interface; the shell is the interpreter","They are exactly the same thing","The shell is the window; the terminal interprets","The terminal is the kernel"],e:"You type in the terminal window; the shell inside it interprets the command."},
+{l:4,n:"l4-cli",q:"Which uses fewer system resources?",o:["CLI","GUI","Both use the same","Neither uses resources"],e:"A CLI is text-only; a GUI needs more memory and CPU for windows and graphics."},
+{l:4,n:"l4-cli",q:"Which are examples of command-line shells?",o:["Bash and Zsh","GNOME and macOS UI","Chrome and Word","Debian and Fedora"],e:"Bash, Zsh and Command Prompt are CLIs. GNOME is a GUI; Debian and Fedora are distros."},
+{l:4,n:"l4-arch",q:"What are system libraries?",o:["Ready-made functions that help apps talk to the kernel","Folders of e-books","Hardware you plug in","A kind of GUI"],e:"Apps don't call the kernel directly; libraries act as the bridge."},
+{l:4,n:"l4-fs",q:"What does the Filesystem Hierarchy Standard (FHS) define?",o:["What each directory is for and where files belong","How fast the CPU runs","Only file permissions","The terminal's colours"],e:"FHS keeps directories like /bin, /etc, /home and /var consistent across distros."},
+{l:4,n:"l4-shell",q:"Why is the shell called a “shell”?",o:["It wraps around the kernel like a protective layer","It is shaped like a shell","It stores all your files","It is the computer's case"],e:"It sits around the kernel (the brain) and controls how users interact with it."},
+{l:5,n:"l5-root",q:"What is the topmost directory in Linux?",o:["/","/root","/home","C:\\"],e:"Everything starts at the root directory “/”. Linux has no C: or D: drives."},
+{l:5,n:"l5-root",q:"What is /root?",o:["The home directory of the root (admin) user","The top of the filesystem","Where every user's files live","A device file"],e:"/ is the top of the tree; /root is the super-admin's home; normal users live in /home/username."},
+{l:5,n:"l5-dirs",q:"Where are system-wide configuration files kept?",o:["/etc","/var","/bin","/home"],e:"/etc (from “etcetera”) holds configuration. /var holds changing data like logs."},
+{l:5,n:"l5-dirs",q:"Where are system log files usually found?",o:["/var/log","/etc/log","/bin/log","/home/log"],e:"/var stores variable data; logs go in /var/log."},
+{l:5,n:"l5-paths",q:"Which of these is an absolute path?",o:["/home/damon/Music","Music/Rock","../Rock","Rock"],e:"Absolute paths start with “/”. The others are relative to where you are."},
+{l:5,n:"l5-paths",q:"What does “..” mean in a path?",o:["The parent directory","The current directory","The root directory","A hidden file"],e:"“.” is the current directory; “..” is one level up."},
+{l:5,n:"l5-nav",q:"Which command shows the directory you are in right now?",o:["pwd","cd","ls","where"],e:"pwd = print working directory. cd moves you; ls lists contents."},
+{l:5,n:"l5-nav",q:"Which command shows hidden files?",o:["ls -a","ls -l","ls -R","cd -a"],e:"Hidden files start with a dot; ls -a shows them. ls -l shows details."},
+{l:5,n:"l5-create",q:"What does `touch app.log` do if app.log already exists?",o:["Updates only its timestamp; the content stays","Deletes its content","Makes a copy","Shows an error"],e:"touch creates an empty file only when none exists; otherwise it just updates the timestamp."},
+{l:5,n:"l5-create",q:"What does `cat > file.txt` do to an existing file?",o:["Overwrites the old content","Appends to the end","Nothing","Renames it"],e:"“>” replaces the content. Use “>>” to append instead."},
+{l:5,n:"l5-mkdir",q:"How do you create dir4/subdir1 in one command when dir4 doesn't exist?",o:["mkdir -p dir4/subdir1","mkdir -r dir4/subdir1","mkdir -n dir4/subdir1","touch -p dir4/subdir1"],e:"-p (parents) creates any missing parent directories too."},
+{l:5,n:"l5-cp",q:"How do you copy a directory and everything inside it?",o:["cp -r dir1 dir2","cp dir1 dir2","mv -r dir1 dir2","cp -i dir1 dir2"],e:"cp needs -r (recursive) for directories; without it you get an error."},
+{l:5,n:"l5-mv",q:"How do you rename debug.log to system.log?",o:["mv debug.log system.log","cp debug.log system.log","rm debug.log system.log","ren debug.log system.log"],e:"Renaming is moving a file to the same directory under a new name. cp would leave two files."},
+{l:5,n:"l5-mv",q:"Which mv option never overwrites an existing file?",o:["-n","-f","-i","-r"],e:"-n = no-clobber. -f forces overwrite; -i asks first."},
+{l:5,n:"l5-rmdir",q:"Which command deletes a directory only if it is empty?",o:["rmdir","rm -r","shred","mv"],e:"rmdir refuses non-empty directories. rm -r removes everything inside, permanently."},
+{l:5,n:"l5-rm",q:"Which command securely deletes a sensitive file?",o:["shred -u file","rm file","rmdir file","touch file"],e:"shred overwrites the contents several times before deleting, so recovery is much harder."},
+{l:5,n:"l5-wild",q:"Which names does `dir?` match?",o:["dir1 but not dir10","dir10 but not dir1","Only “dir”","Every file"],e:"? matches exactly one character, so dir10 (two extra characters) doesn't match."},
+{l:5,n:"l5-wild",q:"Which files does `*log*` match?",o:["debug.log and catalog.md","Only files named exactly log","Only .log files in /var","No files"],e:"* matches zero or more characters, so any name containing “log” matches."},
+{l:5,n:"l5-naming",q:"Which character can never be used in a Linux file name?",o:["/","_","-","."],e:"“/” separates directories in a path, so it's forbidden (along with the null character)."},
+{l:5,n:"l5-naming",q:"In Linux, File.txt and file.txt are…",o:["Two different files (names are case-sensitive)","The same file","Not allowed","Hidden files"],e:"Linux is case-sensitive, so capital letters make a different name."},
+];
+
+// ================= MCQ engine =================
+const mq={set:[],i:0,score:0,picked:null,missed:[],active:false,label:""};
+const mcqEl=$("#mcq"),mqBody=$("#mqBody");
+function mcqStart(questions,label){
+  stopTour();closeCard();if(quiz.on)exitQuiz();
+  mq.set=questions.map(x=>({...x,opts:shuffle(x.o.map((t,k)=>({t,ok:k===0})))}));
+  Object.assign(mq,{i:0,score:0,picked:null,missed:[],active:true,label});
+  mcqEl.hidden=false;document.body.style.overflow="hidden";mcqShow();
+}
+function mcqNewSet(){const pool=QB.filter(x=>!sel||x.l===sel);mcqStart(shuffle(pool.slice()).slice(0,10),sel?`Lecture ${sel}`:"All lectures");}
+function mcqHead(){$("#mqTag").textContent=mq.label;$("#mqProg").textContent=`Question ${Math.min(mq.i+1,mq.set.length)} of ${mq.set.length}`;
+  $("#mqScore").textContent=`Score ${mq.score}`;$("#mqBar").style.width=(mq.i/mq.set.length*100)+"%";}
+function mcqShow(){mcqHead();const x=mq.set[mq.i];mq.picked=null;
+  $("#mcqCard").style.setProperty("--lc",`var(--l${x.l})`);
+  mqBody.innerHTML=`<p class="mq-l">Lecture ${x.l} · ${esc(byId[x.n].t)}</p><h3 class="mq-q" id="mqQ">${fmt(x.q)}</h3>
+   <div class="opts" role="group" aria-label="Answer options">${x.opts.map((o,k)=>`<button class="opt" data-k="${k}"><span class="key">${"ABCD"[k]}</span><span>${fmt(o.t)}</span></button>`).join("")}</div>
+   <div class="mq-skiprow"><button class="btn" id="mqSkip">Skip this question →</button><span class="mq-hint">Keys: 1–4 to answer · S to skip</span></div>
+   <div id="mqFb" aria-live="polite"></div>`;
+  mqBody.querySelectorAll(".opt").forEach(b=>b.onclick=()=>mcqAnswer(+b.dataset.k));
+  $("#mqSkip").onclick=mcqSkip;
+  mqBody.querySelector(".opt").focus({preventScroll:true});}
+function mcqAnswer(k){if(mq.picked!==null)return;const x=mq.set[mq.i];mq.picked=k;const right=x.opts[k].ok;
+  mqBody.querySelectorAll(".opt").forEach((b,j)=>{b.disabled=true;if(x.opts[j].ok)b.classList.add("good");else if(j===k)b.classList.add("bad");});
+  const correct=x.opts.find(o=>o.ok).t;
+  if(right){mq.score++;addXP(8,mqBody.querySelectorAll(".opt")[k]);burstAt(mqBody.querySelectorAll(".opt")[k]);}
+  else mq.missed.push({x,yours:x.opts[k].t,correct});
+  const last=mq.i===mq.set.length-1;
+  $("#mqSkip").closest(".mq-skiprow").remove();
+  if(right){$("#mqFb").innerHTML=`<div class="fb ok"><div class="fb-text"><p class="fb-h">Correct! ${last?"":"Next question…"}</p></div></div>`;mcqHead();
+    mq.timer=setTimeout(mcqNext,reduce?600:1000);return;}
+  $("#mqFb").innerHTML=`<div class="fb ${right?"ok":"no"}"><div class="fb-text"><p class="fb-h">${right?"Correct!":"Not quite."}</p>
+    ${right?"":`<p><span class="fb-k">Your answer</span> ${fmt(x.opts[k].t)}</p><p><span class="fb-k">Right answer</span> <b>${fmt(correct)}</b></p>`}
+    <p class="fb-e">${fmt(x.e)}</p>
+    <div class="acts"><button class="btn primary" id="mqNext">${last?"See results":"Next question →"}</button><button class="btn" id="mqMap">Show on map</button></div></div>
+    ${!right&&DG[x.n]?`<div class="fb-dg">${DG[x.n]()}</div>`:""}</div>`;
+  if(reduce)$("#mqFb svg")?.pauseAnimations?.();
+  $("#mqNext").onclick=mcqNext;$("#mqMap").onclick=()=>mcqToMap(x.n);$("#mqNext").focus({preventScroll:true});mcqHead();$("#mqScore").textContent=`Score ${mq.score}`;}
+function mcqSkip(){if(mq.picked!==null)return;const x=mq.set[mq.i];mq.picked=-1;
+  mq.missed.push({x,yours:null,correct:x.opts.find(o=>o.ok).t});mcqNext();}
+function mcqNext(){clearTimeout(mq.timer);mq.i++;if(mq.i<mq.set.length)mcqShow();else mcqResults();}
+function mcqResults(){mq.active=false;$("#mqBar").style.width="100%";$("#mqProg").textContent="Finished";
+  const n=mq.set.length,pct=Math.round(mq.score/n*100);
+  if(pct>=80){confetti();}
+  mqBody.innerHTML=`<h3 class="mq-q">${mq.score} / ${n} correct · ${pct}%</h3>
+   <p class="mq-sub">${pct===100?"Perfect score.":pct>=80?"Great work.":pct>=50?"Good start. Review the ones below.":"Keep going: read the answers below, then retry."}</p>
+   ${mq.missed.length?`<p class="mq-l">Questions you got wrong or skipped</p><ol class="rev">${mq.missed.map((m,i)=>`<li><p class="rq">${fmt(m.x.q)}</p>
+     <p><span class="fb-k bad">${m.yours===null?"Skipped":"You said"}</span> ${m.yours===null?"":fmt(m.yours)}</p><p><span class="fb-k good">Answer</span> <b>${fmt(m.correct)}</b></p><p class="fb-e">${fmt(m.x.e)}</p>
+     <button class="linkbtn" data-n="${m.x.n}">Show “${esc(byId[m.x.n].t)}” on the map</button></li>`).join("")}</ol>`:""}
+   <div class="acts">${mq.missed.length?'<button class="btn primary" id="mqRetry">Retry the ones I missed</button>':""}<button class="btn ${mq.missed.length?"":"primary"}" id="mqNew">New set of 10</button><button class="btn" id="mqDone">Back to the map</button></div>`;
+  mqBody.querySelectorAll(".rev .linkbtn").forEach(b=>b.onclick=()=>mcqToMap(b.dataset.n));
+  $("#mqRetry")&&($("#mqRetry").onclick=()=>mcqStart(mq.missed.map(m=>m.x),"Retry missed"));
+  $("#mqNew").onclick=mcqNewSet;$("#mqDone").onclick=mcqClose;}
+function mcqClose(){clearTimeout(mq.timer);if(mq.active&&mq.picked!==null&&mq.set[mq.i]&&mq.set[mq.i].opts[mq.picked]?.ok){mq.i++;if(mq.i>=mq.set.length){mq.active=false}}mcqEl.hidden=true;document.body.style.overflow="";updMcqBtn();}
+function mcqToMap(id){mcqEl.hidden=true;document.body.style.overflow="";updMcqBtn();
+  els[id].scrollIntoView({behavior:reduce?"auto":"smooth",block:"center"});flash(els[id],"reveal",1700);
+  setTimeout(()=>openCard(id,{pinned:true,flipped:true,hint:""}),reduce?0:500);
+  if(mq.active)toast("Press “Resume quiz” in the bar to continue");}
+function updMcqBtn(){$("#mcqBtn").textContent=mq.active&&mcqEl.hidden?"Resume quiz":"Quiz: questions";}
+$("#mcqBtn").onclick=()=>{if(mq.active){mcqEl.hidden=false;document.body.style.overflow="hidden";updMcqBtn();if(mq.picked!==null&&mq.set[mq.i]&&mq.set[mq.i].opts[mq.picked]?.ok)mcqNext();else if(mq.picked===null)mcqShow();}else mcqNewSet();};
+$("#mqClose").onclick=mcqClose;
+mcqEl.addEventListener("click",ev=>{if(ev.target===mcqEl)mcqClose()});
+document.addEventListener("keydown",ev=>{if(mcqEl.hidden)return;
+  if(ev.key==="Escape"){mcqClose();return}
+  const k="1234".indexOf(ev.key);if(k>=0&&mq.picked===null&&mq.active){ev.preventDefault();mcqAnswer(k);}
+  if((ev.key==="s"||ev.key==="S")&&mq.picked===null&&mq.active){ev.preventDefault();mcqSkip();}
+},true);
+</script>
